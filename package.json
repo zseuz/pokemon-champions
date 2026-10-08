@@ -1,0 +1,33 @@
+{
+  "name": "pokemon-champions",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "oxlint",
+    "preview": "vite preview",
+    "validate": "tsx scripts/validate-meta.ts",
+    "gen:abilities": "tsx scripts/gen-abilities.ts",
+    "gen:learnsets": "tsx scripts/gen-learnsets.ts",
+    "gen:es": "tsx scripts/gen-es-names.ts",
+    "gen:meta": "tsx scripts/gen-meta.ts"
+  },
+  "dependencies": {
+    "@smogon/calc": "^0.12.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
+  },
+  "devDependencies": {
+    "@pkmn/dex": "^0.10.11",
+    "@types/node": "^24.13.3",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.7",
+    "@vitejs/plugin-react": "^6.1.1",
+    "oxlint": "^1.81.0",
+    "tsx": "^4.23.15",
+    "typescript": "~6.0.2",
+    "vite": "^8.3.0"
+  }
+}
