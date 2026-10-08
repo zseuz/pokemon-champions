@@ -13,6 +13,14 @@ export function useMetaController() {
   const [updating, setUpdating] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
+  // el aviso se cierra solo (no mientras se descarga); los errores y resultados largos duran más
+  useEffect(() => {
+    if (!message || updating) return;
+    const long = message.startsWith('Error') || message.length > 60;
+    const t = setTimeout(() => setMessage(null), long ? 10000 : 5000);
+    return () => clearTimeout(t);
+  }, [message, updating]);
+
   const runCheck = async (force = false) => {
     const last = Number(localStorage.getItem(LAST_CHECK) ?? 0);
     if (!force && Date.now() - last < EVERY) return;
