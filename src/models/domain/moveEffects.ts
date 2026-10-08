@@ -87,7 +87,6 @@ export const SECONDARY: Record<string, Secondary> = {
   'Leaf Storm': { chance: 100, self: { spa: -2 } },
   'Make It Rain': { chance: 100, self: { spa: -1 } },
   'Wood Hammer': { chance: 0 },
-  'Electro Shot': { chance: 100, self: { spa: 1 } },
   'Trailblaze': { chance: 100, self: { spe: 1 } },
   'Flame Charge': { chance: 100, self: { spe: 1 } },
   'Aqua Step': { chance: 100, self: { spe: 1 } },

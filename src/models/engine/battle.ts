@@ -48,6 +48,8 @@ export interface BattleMon {
   perish: number;
   /** set original si se ha transformado (Ditto) */
   baseSet?: PokemonSet;
+  /** ataque de carga en preparación (Electrorrayo, Rayo Solar…) */
+  charging?: string;
 }
 
 export interface SideState {
@@ -496,6 +498,7 @@ function switchIn(state: BattleState, side: SideIdx, slot: number, teamIdx: numb
     out.boosts = { atk: 0, def: 0, spa: 0, spd: 0, spe: 0, hp: 0, accuracy: 0, evasion: 0 };
     out.tauntTurns = 0;
     out.encore = null;
+    out.charging = undefined;
     out.perish = 0;
     out.lastMove = '';
     if (out.baseSet) untransform(out);
@@ -530,6 +533,9 @@ function untransform(m: BattleMon) {
   const { stats, types } = computeStats(base, base.species, base.ability);
   Object.assign(m, { set: base, species: base.species, ability: base.ability, types, stats, baseSet: undefined });
 }
+
+/** Ataques que tardan un turno en cargarse; el clima indicado los lanza al momento. */
+const CHARGE_MOVES: Record<string, Weather | ''> = { 'Electro Shot': 'Rain', 'Solar Beam': 'Sun', 'Solar Blade': 'Sun', 'Meteor Beam': '' };
 
 const SPIKES_DMG = [0, 1 / 8, 1 / 6, 1 / 4];
 
@@ -682,8 +688,11 @@ function effectiveMoveType(state: BattleState, user: BattleMon, moveName: string
 }
 
 function executeMove(state: BattleState, user: BattleMon, chosen: Extract<Action, { type: 'move' }>, f: TurnFlags) {
-  // Otra Vez: solo puede repetir el movimiento bloqueado
-  const action = user.encore && user.encore.move !== chosen.move ? { ...chosen, move: user.encore.move } : chosen;
+  // Ataque de carga ya preparado / Otra Vez: solo puede usar ese movimiento
+  const forced = user.charging ?? user.encore?.move;
+  const action = forced && forced !== chosen.move ? { ...chosen, move: forced } : chosen;
+  const released = !!user.charging;
+  user.charging = undefined;
   const moveName = action.move;
   const mv = getMove(moveName);
   const side = state.sides[user.side];
@@ -708,6 +717,22 @@ function executeMove(state: BattleState, user: BattleMon, chosen: Extract<Action
     return;
   }
 
+  // Ataques de carga: el primer turno se preparan (salvo con su clima o Hierba Única)
+  if (moveName in CHARGE_MOVES && !released) {
+    const w = CHARGE_MOVES[moveName];
+    if (moveName === 'Electro Shot' || moveName === 'Meteor Beam') applyBoosts(state, user, { spa: 1 }, user);
+    if (!(w && state.weather?.type === w)) {
+      if (user.item === 'Power Herb') {
+        log(state, 'info', `¡${name(user)} se carga al instante con la Hierba Única!`, user.side);
+        consumeItem(state, user);
+      } else {
+        log(state, 'move', `${name(user)} se prepara para usar ${moveLabel(moveName)}.`, user.side);
+        user.charging = moveName;
+        user.lastMove = moveName;
+        return;
+      }
+    }
+  }
   log(state, 'move', `${name(user)} usa ${moveLabel(moveName)}.`, user.side);
   user.lastMove = moveName;
   if (!STATUS_MOVES.protect.includes(moveName)) user.protectCount = 0;
@@ -1149,6 +1174,7 @@ export function replaceFainted(prev: BattleState, slot: number, teamIdx: number)
 // ───────────────────────── Opciones legales ─────────────────────────
 
 export function legalMoves(m: BattleMon): string[] {
+  if (m.charging) return [m.charging];
   if (m.encore) return [m.encore.move];
   return m.set.moves.filter(Boolean);
 }

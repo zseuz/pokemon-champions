@@ -2,6 +2,7 @@
 import { useMemo, useState } from 'react';
 import { metaEntry, metaFor, type Format } from '../models/data/meta';
 import { evaluateOptions, rankSwitchIns, speedOrder } from '../models/engine/ai';
+import { bestPlan } from '../models/engine/lookahead';
 import { computeDamage, monAt, type BattleMon, type BattleState, type Terrain, type Weather } from '../models/engine/battle';
 import { getSpecies } from '../models/domain/dex';
 import { defaultSet, type PokemonSet } from '../models/domain/sets';
@@ -93,6 +94,8 @@ export function useAssistantController(team: PokemonSet[], format: Format) {
   const foesAlive = foeMons.some(Boolean);
   const advice = useMemo(() => myMons.map((m) => (m && foesAlive ? evaluateOptions(state, m).slice(0, singles ? 5 : 4) : [])), [state]); // eslint-disable-line react-hooks/exhaustive-deps
   const foeAdvice = useMemo(() => foeMons.map((m) => (m && myMons.some(Boolean) ? evaluateOptions(state, m).slice(0, singles ? 3 : 2) : [])), [state]); // eslint-disable-line react-hooks/exhaustive-deps
+  /** jugada conjunta recomendada mirando un turno adelante (simula la mejor respuesta del rival) */
+  const plan = useMemo(() => (myMons.some(Boolean) && foesAlive ? bestPlan(state, 0) : null), [state]); // eslint-disable-line react-hooks/exhaustive-deps
   const myReplace = useMemo(() => rankSwitchIns(state, 0).slice(0, 3), [state]);
   const foeReplace = useMemo(() => rankSwitchIns(state, 1).slice(0, 3), [state]);
   const alive = (side: 0 | 1) => state.sides[side].team.filter((m) => !m.fainted).length;
@@ -103,5 +106,5 @@ export function useAssistantController(team: PokemonSet[], format: Format) {
   /** Daño de un ataque (para las tablas de la vista). */
   const damage = (a: BattleMon, d: BattleMon, move: string, spread: boolean) => computeDamage(state, a, d, move, { spread });
 
-  return { foeSetFor, damage, singles, N, mineIdx, setMineIdx, mine, setMine, theirs, setTheirs, activeMine, setActiveMine, activeFoe, setActiveFoe, weather, setWeather, terrain, setTerrain, trickRoom, setTrickRoom, tw, setTw, screens, setScreens, editingFoe, setEditingFoe, mineSlots, state, slotsN, myMons, foeMons, rawActive, foesAlive, advice, foeAdvice, myReplace, foeReplace, alive, order };
+  return { foeSetFor, damage, singles, N, mineIdx, setMineIdx, mine, setMine, theirs, setTheirs, activeMine, setActiveMine, activeFoe, setActiveFoe, weather, setWeather, terrain, setTerrain, trickRoom, setTrickRoom, tw, setTw, screens, setScreens, editingFoe, setEditingFoe, mineSlots, state, slotsN, myMons, foeMons, rawActive, foesAlive, advice, foeAdvice, plan, myReplace, foeReplace, alive, order };
 }

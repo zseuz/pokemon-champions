@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react';
-import { useBattleController } from '../../controllers/useBattleController';
+import { EXPERT, useBattleController } from '../../controllers/useBattleController';
 import { useSimulatorController } from '../../controllers/useSimulatorController';
 import type { BattleRecord } from '../../models/analysis/history';
 import { useActionPickerController } from '../../controllers/useActionPickerController';
@@ -30,6 +30,7 @@ export function Simulator({ team, format, onFinish }: { team: PokemonSet[]; form
             <label>Dificultad
               <select value={difficulty} onChange={(e) => setDifficulty(Number(e.target.value))}>
                 <option value={0.6}>Fácil</option><option value={0.15}>Normal</option><option value={0}>Difícil</option>
+                <option value={EXPERT}>Experto (mira un turno adelante)</option>
               </select>
             </label>
           </div>
@@ -115,7 +116,7 @@ function BattleView({ battle, setBattle, difficulty, onExit, onRematch }: {
 
   useEffect(() => { logRef.current?.scrollTo({ top: logRef.current.scrollHeight }); }, [battle.log.length]);
 
-  const { choices, setChoice, hint, mine, foes, ready, megaClaimed, submit, showHint, applyHint, replaceSlots, replacements, replace } =
+  const { plan, choices, setChoice, hint, mine, foes, ready, megaClaimed, submit, showHint, applyHint, replaceSlots, replacements, replace } =
     useBattleController(battle, setBattle, difficulty);
   const side0 = battle.sides[0];
   const side1 = battle.sides[1];
@@ -199,6 +200,12 @@ function BattleView({ battle, setBattle, difficulty, onExit, onRematch }: {
               </div>
               {hint && (
                 <div className="hint-box">
+                  {plan && (
+                    <div className="plan-line">
+                      🔮 <b>Mirando un turno adelante:</b> {plan.labels.filter(Boolean).join(' + ')}
+                      <span className={plan.value >= plan.now ? 'up' : 'down'}> · ventaja {Math.round(plan.now)} → {Math.round(plan.value)}</span>
+                    </div>
+                  )}
                   {hint.map((opts, i) => mine[i] && (
                     <div key={i}>
                       <b>{mine[i]!.species}:</b>

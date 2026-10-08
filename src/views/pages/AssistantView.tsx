@@ -17,7 +17,7 @@ const STATUS_OPTS: [Status, string][] = [['', 'Sano'], ['brn', 'Quemado'], ['par
  * - Dobles: 2 contra 2 (tus otros Pokémon del equipo cuentan como reserva para los cambios).
  */
 export function Assistant({ team, format }: { team: PokemonSet[]; format: Format }) {
-  const { foeSetFor, damage, singles, N, mineIdx, setMineIdx, mine, setMine, theirs, setTheirs, activeMine, setActiveMine, activeFoe, setActiveFoe, weather, setWeather, terrain, setTerrain, trickRoom, setTrickRoom, tw, setTw, screens, setScreens, editingFoe, setEditingFoe, mineSlots, state, slotsN, myMons, foeMons, rawActive, foesAlive, advice, foeAdvice, myReplace, foeReplace, alive, order } = useAssistantController(team, format);
+  const { foeSetFor, damage, singles, N, mineIdx, setMineIdx, mine, setMine, theirs, setTheirs, activeMine, setActiveMine, activeFoe, setActiveFoe, weather, setWeather, terrain, setTerrain, trickRoom, setTrickRoom, tw, setTw, screens, setScreens, editingFoe, setEditingFoe, mineSlots, state, slotsN, myMons, foeMons, rawActive, foesAlive, advice, foeAdvice, plan, myReplace, foeReplace, alive, order } = useAssistantController(team, format);
   if (team.length === 0) {
     return <div className="empty-state">Primero arma tu equipo de {FORMAT_ES[format]} en <b>Mi equipo</b> o <b>Mi colección</b> para usar el asistente.</div>;
   }
@@ -159,6 +159,13 @@ export function Assistant({ team, format }: { team: PokemonSet[]; format: Format
         {alive(1) === 0 && <div className="good-msg">Al rival no le quedan Pokémon: ¡has ganado!</div>}
         {myMons.some(Boolean) && !foesAlive && alive(1) > 0 && (
           <p className="notice small">El rival tiene que sacar otro Pokémon antes de seguir. Mira abajo a quién es probable que saque.</p>
+        )}
+        {plan && (
+          <div className="plan-line">
+            🔮 <b>Mirando un turno adelante:</b> {plan.labels.filter(Boolean).join(' + ')}
+            <span className={plan.value >= plan.now ? 'up' : 'down'}> · ventaja {Math.round(plan.now)} → {Math.round(plan.value)}</span>
+            <div className="muted small">Simula el turno contra la mejor respuesta del rival y valora cómo quedaríais (PS, Pokémon vivos, mejoras y estados).</div>
+          </div>
         )}
         <div className={singles ? 'advice-grid single' : 'advice-grid'}>
           {slotsN.map((slot) => {

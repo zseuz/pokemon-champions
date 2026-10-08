@@ -1,13 +1,18 @@
 /** Controlador de un combate en curso: acciones elegidas, consejo de la IA y resolución del turno. */
 import { useState } from 'react';
 import { chooseActions, evaluateOptions, type Option } from '../models/engine/ai';
+import { bestPlan, type Plan } from '../models/engine/lookahead';
 import {
   benchOf, monAt, moveTargetKind, needsReplacement, replaceFainted, resolveTurn, type Action, type BattleState, type SideActions,
 } from '../models/engine/battle';
 
+/** Dificultad: ruido de la IA (0.6 fácil, 0.15 normal, 0 difícil) o EXPERT = mira un turno adelante. */
+export const EXPERT = -1;
+
 export function useBattleController(battle: BattleState, setBattle: (b: BattleState) => void, difficulty: number) {
   const [choices, setChoices] = useState<(Action | null)[]>([null, null]);
   const [hint, setHint] = useState<Option[][] | null>(null);
+  const [plan, setPlan] = useState<Plan | null>(null);
 
   // una posición en individuales, dos en dobles
   const mine = battle.sides[0].active.map((_, slot) => monAt(battle, { side: 0, slot }));
@@ -23,15 +28,20 @@ export function useBattleController(battle: BattleState, setBattle: (b: BattleSt
 
   /** Resuelve el turno con tus acciones y las de la IA rival. */
   const submit = () => {
-    const ai = chooseActions(battle, 1, difficulty);
+    const ai = difficulty === EXPERT ? bestPlan(battle, 1)?.actions ?? chooseActions(battle, 1, 0) : chooseActions(battle, 1, difficulty);
     setBattle(resolveTurn(battle, [choices as SideActions, ai]));
     setChoices([null, null]);
     setHint(null);
+    setPlan(null);
   };
 
-  const showHint = () => setHint(mine.map((m) => (m ? evaluateOptions(battle, m).slice(0, 3) : [])));
-  /** Aplica la mejor jugada del consejo (solo una Mega por turno). */
+  const showHint = () => {
+    setHint(mine.map((m) => (m ? evaluateOptions(battle, m).slice(0, 3) : [])));
+    setPlan(bestPlan(battle, 0));
+  };
+  /** Aplica la mejor jugada del consejo: la del plan a un turno vista si existe (solo una Mega por turno). */
   const applyHint = () => {
+    if (plan) { setChoices(plan.actions.map((a) => a ?? null)); return; }
     if (!hint) return;
     let megaTaken = false;
     setChoices(hint.map((opts, i) => {
@@ -53,5 +63,5 @@ export function useBattleController(battle: BattleState, setBattle: (b: BattleSt
   });
   const replace = (slot: number, teamIdx: number) => setBattle(replaceFainted(battle, slot, teamIdx));
 
-  return { choices, setChoice, hint, mine, foes, ready, megaClaimed, submit, showHint, applyHint, replaceSlots, replacements, replace };
+  return { plan, choices, setChoice, hint, mine, foes, ready, megaClaimed, submit, showHint, applyHint, replaceSlots, replacements, replace };
 }

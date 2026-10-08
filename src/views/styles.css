@@ -609,3 +609,6 @@ button.preview-mon.picked { border-color: var(--accent); }
 .hist-side { display: flex; }
 .hist-meta { display: flex; gap: 6px; flex-wrap: wrap; }
 @media (max-width: 760px) { .hist-stats { grid-template-columns: repeat(2, 1fr); } }
+
+.plan-line { margin-bottom: 8px; padding: 6px 10px; border-radius: 8px; background: #1f2b55; }
+.plan-line .up { color: #8bf0a5; } .plan-line .down { color: #ff9a9a; }

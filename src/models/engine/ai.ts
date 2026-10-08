@@ -110,7 +110,7 @@ export function evaluateOptions(state: BattleState, user: BattleMon): Option[] {
         if (acc < 1) reasons.push(`precisión ${Math.round(acc * 100)}%`);
         // ataques de carga: sin el clima adecuado tardan 2 turnos
         const charge: Record<string, string> = { 'Electro Shot': 'Rain', 'Solar Beam': 'Sun', 'Solar Blade': 'Sun', 'Meteor Beam': '' };
-        if (mv in charge && state.weather?.type !== charge[mv] && !(mv === 'Electro Shot' && user.item === 'Power Herb')) {
+        if (mv in charge && !user.charging && state.weather?.type !== charge[mv] && user.item !== 'Power Herb') {
           score *= 0.45;
           reasons.push(`⚠ tarda 2 turnos${charge[mv] ? ` sin ${charge[mv] === 'Rain' ? 'lluvia' : 'sol'}` : ''} (el rival puede protegerse o golpearte antes)`);
         }
@@ -251,7 +251,7 @@ export function evaluateOptions(state: BattleState, user: BattleMon): Option[] {
   // ── Cambios ── (en individuales siempre se valoran: cambiar es la jugada clave)
   const bench = benchOf(state, user.side);
   const perishing = user.perish > 0 && user.perish <= 2;
-  if (singles || inDanger || myHp < 35 || perishing) {
+  if (!user.charging && (singles || inDanger || myHp < 35 || perishing)) {
     for (const i of bench) {
       const b = state.sides[user.side].team[i];
       const incoming = foes.reduce((t, f) => t + bestIncoming(state, f, b).pct, 0);

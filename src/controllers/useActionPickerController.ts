@@ -43,7 +43,8 @@ export function useActionPickerController(
     ? monAt(battle, choice.target)?.species : undefined;
   const chosenLabel = choice ? (choice.type === 'move' ? moveLabel(choice.move) : `Cambio a ${battle.sides[0].team[choice.to].species}`) : '';
 
-  const bench = benchOf(battle, 0).filter((i) => i !== otherSwitch).map((i) => {
+  // cargando un ataque no se puede cambiar
+  const bench = (mon.charging ? [] : benchOf(battle, 0)).filter((i) => i !== otherSwitch).map((i) => {
     const b = battle.sides[0].team[i];
     return { i, species: b.species, hpPct: Math.round((b.hp / b.maxHP) * 100) };
   });

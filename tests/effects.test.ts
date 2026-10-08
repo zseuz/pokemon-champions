@@ -69,4 +69,19 @@ describe('Individuales', () => {
     b = turn(b, mv('Protect'), { type: 'switch', to: 1 });
     expect(b.sides[1].team[0].species).toBe('Ditto');
   });
+
+  it('Electrorrayo tarda un turno sin lluvia y sale al momento con lluvia', () => {
+    const arch = set('Archaludon', ['Electro Shot', 'Protect']);
+    let b = createBattle([{ ...arch, item: 'Leftovers' }], [set('Gyarados', ['Protect', 'Waterfall'])], ['Tú', 'Rival'], 'singles');
+    const hp0 = monAt(b, { side: 1, slot: 0 })!.hp;
+    b = turn(b, mv('Electro Shot'), foeMv('Waterfall'));
+    const a = monAt(b, { side: 0, slot: 0 })!;
+    expect(a.charging).toBe('Electro Shot');
+    expect(a.boosts.spa).toBe(1);
+    expect(legalMoves(a)).toEqual(['Electro Shot']);
+    expect(monAt(b, { side: 1, slot: 0 })!.hp).toBe(hp0);
+    b = turn(b, mv('Electro Shot'), foeMv('Waterfall'));
+    expect(b.sides[0].team[0].charging).toBeUndefined();
+    expect(b.sides[1].team[0].hp).toBeLessThan(hp0);
+  });
 });
