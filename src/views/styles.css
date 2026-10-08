@@ -219,8 +219,10 @@ input[type='checkbox'] {
   padding: 0 16px 40px;
 }
 
+/* "backwards": al terminar no queda ningún transform activo; si no, los modales y desplegables
+   (position: fixed) se colocan respecto a la página entera y no respecto a la pantalla. */
 main > div, main > section {
-  animation: pageFadeIn 0.24s var(--ease-out) both;
+  animation: pageFadeIn 0.24s var(--ease-out) backwards;
 }
 
 @keyframes pageFadeIn {
@@ -230,7 +232,7 @@ main > div, main > section {
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: none;
   }
 }
 
