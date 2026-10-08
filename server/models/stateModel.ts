@@ -52,6 +52,14 @@ function open(): DatabaseSync {
       rival_json TEXT NOT NULL,          -- especies del rival
       notes      TEXT NOT NULL DEFAULT ''
     );
+    CREATE TABLE IF NOT EXISTS saved_teams (
+      id           TEXT PRIMARY KEY,
+      format       TEXT NOT NULL,          -- 'singles' | 'doubles'
+      position     INTEGER NOT NULL,
+      name         TEXT NOT NULL,
+      members_json TEXT NOT NULL,          -- [{ species, item? }]: item = objeto propio de este equipo
+      active       INTEGER NOT NULL DEFAULT 0
+    );
     CREATE TABLE IF NOT EXISTS settings (
       key   TEXT PRIMARY KEY,
       value TEXT NOT NULL
@@ -74,6 +82,7 @@ export const KEYS = {
   candidates: 'pkmn-champions-candidates',
   format: 'pkmn-champions-format',
   history: 'pkmn-champions-history',
+  teamBook: 'pkmn-champions-teambook',
 } as const;
 
 export function readAll(): Record<string, Json> {
@@ -99,6 +108,13 @@ export function readAll(): Record<string, Json> {
   if (cands.length) out[KEYS.candidates] = cands.map((r) => JSON.parse(r.set_json));
   const battles = d.prepare('SELECT * FROM battles ORDER BY played_at').all() as { id: string; played_at: string; format: string; result: string; source: string; mine_json: string; rival_json: string; notes: string }[];
   if (battles.length) out[KEYS.history] = battles.map((b) => ({ id: b.id, date: b.played_at, format: b.format, result: b.result, source: b.source, mine: JSON.parse(b.mine_json), rival: JSON.parse(b.rival_json), notes: b.notes }));
+  const saved = d.prepare('SELECT * FROM saved_teams ORDER BY format, position').all() as { id: string; format: string; name: string; members_json: string; active: number }[];
+  if (saved.length) {
+    out[KEYS.teamBook] = {
+      teams: saved.map((t) => ({ id: t.id, name: t.name, format: t.format, members: JSON.parse(t.members_json) })),
+      active: Object.fromEntries(saved.filter((t) => t.active).map((t) => [t.format, t.id])),
+    };
+  }
   const fmt = d.prepare("SELECT value FROM settings WHERE key = 'format'").get() as { value: string } | undefined;
   if (fmt) out[KEYS.format] = JSON.parse(fmt.value);
   return out;
@@ -150,6 +166,13 @@ export function write(key: string, value: Json) {
         }
         break;
       }
+      case KEYS.teamBook: {
+        const book = value as { teams: { id: string; format: string; name: string; members: Json[] }[]; active: Record<string, string> };
+        d.exec('DELETE FROM saved_teams');
+        const ins = d.prepare('INSERT INTO saved_teams (id, format, position, name, members_json, active) VALUES (?, ?, ?, ?, ?, ?)');
+        book.teams.forEach((t, i) => ins.run(t.id, t.format, i, t.name, JSON.stringify(t.members), book.active[t.format] === t.id ? 1 : 0));
+        break;
+      }
       case KEYS.format:
         d.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('format', ?)").run(JSON.stringify(value));
         break;
@@ -169,5 +192,6 @@ export function stats() {
     items: n('SELECT COUNT(*) AS n FROM inventory'),
     candidates: n('SELECT COUNT(*) AS n FROM candidates'),
     battles: n('SELECT COUNT(*) AS n FROM battles'),
+    savedTeams: n('SELECT COUNT(*) AS n FROM saved_teams'),
   };
 }

@@ -3,6 +3,7 @@ import { FORMAT_ES, META_INFOS, type Format } from '../models/data/meta';
 import type { AppController, Tab } from '../controllers/useAppController';
 import { DataLists } from './components/SetEditor';
 import { MetaStatus } from './components/MetaStatus';
+import { TeamSwitcher } from './components/TeamSwitcher';
 import { lazy, Suspense } from 'react';
 
 // cada pestaña se carga al abrirla (la primera carga de la app es más ligera)
@@ -24,8 +25,13 @@ const TABS: [Tab, string][] = [
   ['history', '📜 Historial'],
 ];
 
+// pestañas que trabajan con un equipo: muestran el selector de equipos
+const TEAM_TABS: Tab[] = ['collection', 'team', 'assistant', 'sim'];
+
 export function AppView(c: AppController) {
   const { tab, setTab, format, setFormat, db, dbPath, box, setBox, teams, team, setTeam, inventory, setInventory } = c;
+  // al cambiar de equipo, las pantallas con estado propio (asistente, simulador) empiezan de cero
+  const teamKey = `${format}-${c.teamManager.active.id}`;
   const dbOk = db === 'db' || db === 'migrated';
   return (
     <div className="app">
@@ -64,6 +70,7 @@ export function AppView(c: AppController) {
         </nav>
       </header>
       <main>
+        {TEAM_TABS.includes(tab) && <TeamSwitcher tm={c.teamManager} format={format} />}
         <Suspense fallback={<p className="muted">Cargando…</p>}>
         {tab === 'ranking' && (
           <Ranking format={format} teamSpecies={team.map((s) => s.species)} boxSpecies={box.map((b) => b.species)} onRecruit={c.recruitFromRanking} />
@@ -74,9 +81,9 @@ export function AppView(c: AppController) {
         {tab === 'collection' && (
           <Collection format={format} team={team} setTeam={setTeam} box={box} setBox={setBox} inventory={inventory} onGoRecruit={() => setTab('recruit')} backup={c.backup} history={c.history} />
         )}
-        {tab === 'team' && <TeamBuilder key={format} format={format} team={team} setTeam={setTeam} onRecruit={c.recruit} />}
-        {tab === 'assistant' && <Assistant key={format} team={teams[format]} format={format} />}
-        {tab === 'sim' && <Simulator key={format} team={teams[format]} format={format} onFinish={c.addBattle} />}
+        {tab === 'team' && <TeamBuilder key={teamKey} format={format} team={team} setTeam={setTeam} onRecruit={c.recruit} teamName={c.teamManager.active.name} ownItems={c.teamManager.ownItems} resetItem={c.teamManager.resetItem} />}
+        {tab === 'assistant' && <Assistant key={teamKey} team={teams[format]} format={format} />}
+        {tab === 'sim' && <Simulator key={teamKey} team={teams[format]} format={format} onFinish={c.addBattle} />}
         {tab === 'history' && <History format={format} history={c.history} team={team} addBattle={c.addBattle} removeBattle={c.removeBattle} />}
         </Suspense>
       </main>

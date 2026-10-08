@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { getSpecies, spriteId, TYPE_COLOR, TYPE_ES } from '../../models/domain/dex';
+import { itemName } from '../format';
+import ITEM_SPRITES from '../../models/data/itemSprites.json';
 
 export function Sprite({ species, size = 64 }: { species: string; size?: number }) {
   const sid = spriteId(species);
@@ -53,3 +55,22 @@ export function DamageBar({ min, max }: { min: number; max: number }) {
   );
 }
 
+
+const SPRITE_NUM = ITEM_SPRITES as Record<string, number>;
+
+/** Icono de un objeto (hoja de iconos de Pokémon Showdown: 24×24, 16 por fila). */
+export function ItemIcon({ item, size = 24 }: { item: string; size?: number }) {
+  const n = SPRITE_NUM[item];
+  if (n == null) return null;
+  const k = size / 24;
+  return (
+    <span
+      className="item-icon" title={itemName(item)} role="img" aria-label={itemName(item)}
+      style={{
+        width: size, height: size,
+        backgroundSize: `${384 * k}px auto`,
+        backgroundPosition: `-${(n % 16) * 24 * k}px -${Math.floor(n / 16) * 24 * k}px`,
+      }}
+    />
+  );
+}

@@ -320,7 +320,7 @@ button.preview-mon.picked { border-color: var(--accent); }
 /* ── Selector con recomendaciones ── */
 .picker-field { position: relative; }
 .picker-btn { width: 100%; display: flex; align-items: center; gap: 6px; text-align: left; color: var(--text); }
-.picker-btn > span:first-child { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.picker-btn > .picker-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .caret { color: var(--muted); }
 .star { color: var(--accent); }
 .picker-pop { position: absolute; z-index: 60; top: calc(100% + 4px); left: 0; width: min(440px, 88vw); background: var(--bg); border: 1px solid var(--accent2); border-radius: 12px; box-shadow: 0 10px 30px #000a; padding: 8px; }
@@ -630,3 +630,20 @@ kbd { border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; font-si
 
 /* en pantallas estrechas, las celdas de rejilla pueden encogerse (las tablas hacen scroll dentro) */
 .dmg-tables > *, .field-grid > *, .preview-grid > *, .advice-grid > * { min-width: 0; }
+
+.item-icon { display: inline-block; flex: none; background-image: url(https://play.pokemonshowdown.com/sprites/itemicons-sheet.png); background-repeat: no-repeat; image-rendering: pixelated; vertical-align: middle; }
+.picker-btn .item-icon { margin-right: 6px; }
+
+/* ── Varios equipos ── */
+.team-switcher { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; padding: 8px 10px; background: var(--bg2); border: 1px solid var(--line); border-radius: 12px; }
+.team-tabs { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
+.team-tab { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 4px 10px; border-radius: 10px; opacity: .7; }
+.team-tab.active { opacity: 1; border-color: var(--accent2); background: #1f2b55; }
+.team-tab-mons { display: flex; min-height: 24px; align-items: center; }
+.team-switcher-actions { display: flex; gap: 4px; flex-wrap: wrap; }
+.team-item { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; margin-top: 2px; }
+.own-item { font-size: .72rem; padding: 0 6px; border-radius: 999px; background: #3a2f12; color: #f5c97a; border: 1px solid #6b5420; }
+.own-item .link { margin-left: 4px; }
+.own-item-note { color: #f5c97a; }
+.team-switcher .team-tabs { flex: 1 1 100%; order: 2; }
+.team-switcher-actions { margin-left: auto; }

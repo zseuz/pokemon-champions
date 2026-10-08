@@ -5,7 +5,7 @@ import { getMove, getSpecies, STAT_ES, STATS, TYPE_ES, TYPES } from '../../model
 import { itemName } from '../format';
 import { effectiveSpecies, type PokemonSet } from '../../models/domain/sets';
 import { type BoxEntry } from '../../models/repository/store';
-import { Sprite, TypeBadge, Types } from '../components/common';
+import { Sprite, TypeBadge, Types, ItemIcon } from '../components/common';
 import { tierColor } from '../theme';
 import { SetEditor } from '../components/SetEditor';
 import { BackupPanel } from '../components/BackupPanel';
@@ -231,7 +231,7 @@ export function Collection({ format, team, setTeam, box, setBox, inventory, onGo
                 </div>
                 <div className="coll-set small">
                   <div><span className="muted">Habilidad:</span> {abilityName(s.ability)}</div>
-                  <div><span className="muted">Objeto:</span> {s.item ? itemName(s.item) : '—'} · <span className="muted">{s.nature}</span></div>
+                  <div><span className="muted">Objeto:</span> {s.item ? <><ItemIcon item={s.item} size={20} /> {itemName(s.item)}</> : '—'} · <span className="muted">{s.nature}</span></div>
                   <div className="coll-moves">{s.moves.map((m) => <span key={m}><TypeBadge type={getMove(m)?.type ?? 'Normal'} small /> {m}</span>)}</div>
                   {isCustomEntry(s.species)
                     ? <div className="custom-tag">✔ Tu set (se usa en individuales y dobles)</div>

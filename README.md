@@ -37,7 +37,7 @@
 | 🏆 **Ranking** | Los **262 Pokémon** del ladder de cada formato en tiers **S → F**, con puesto, tendencia respecto a la temporada anterior y el **set más usado con el % de jugadores** que lleva cada parte. |
 | 🤝 **Reclutamiento** | **🎲 Selección del juego**: registras los candidatos que te ofrece el juego *tal como vienen* (habilidad, ataques, naturaleza, Stat Points) — a mano o **📷 leyendo una captura de pantalla** (OCR) — y te dice **cuál elegir**: calidad del ejemplar, aporte a tu equipo, enfrentamientos contra el meta y si **ya tienes uno igual o mejor**. **🔍 Buscar Pokémon**: catálogo visual filtrable por nombre y tipo. **🤝 Sinergia por habilidad**: quién combina con tu equipo (climas, campos, Liviano + semillas, Pararrayos, Espacio Raro…). **🎒 Mis objetos**: reparto óptimo de tu inventario. |
 | 📚 **Mi colección** | Todos tus reclutados con **tu set** (el mismo en individuales y dobles). **🩺 Observaciones del equipo** (debilidades compartidas, roles que faltan, amenazas, objetos, sets mejorables), mejores incorporaciones/cambios, aporte de cada miembro y **armado automático** del mejor equipo. **💾 Copia de seguridad** (JSON) e **importar/exportar en formato Showdown**. |
-| 🧩 **Mi equipo** | Equipo de 6 por formato: tabla defensiva, cobertura ofensiva, roles, amenazas del meta y recomendaciones. |
+| 🧩 **Mi equipo** | **Varios equipos por formato** (Equipo 1, Equipo 2…, como en el juego): crear, duplicar, renombrar y borrar. Cada equipo puede dar a un mismo Pokémon un **objeto distinto** (el resto del set es el de tu colección). Tabla defensiva, cobertura ofensiva, roles, amenazas del meta y recomendaciones. |
 | 🧠 **Asistente** | **Individuales (3 vs 3)** o **Dobles (2 vs 2)**: configuras la situación (PS, estados, debilitados, cambios de stats, clima, campo, Espacio Raro, Viento Afín, pantallas) y te recomienda **atacar o cambiar**, predice al rival y muestra el daño exacto. **🔮 Mira un turno adelante**: simula cada jugada contra la mejor respuesta del rival. |
 | ⚔️ **Simulador** | Combates **individuales (3 vs 3)** o **dobles (4 de 6)** contra una IA con equipos del meta; dificultad hasta **Experto** (mira un turno adelante) y botón **💡 Consejo**. Trampas, Otra Vez, Canto Mortal, Rugido, Ditto, ataques de carga… |
 | 📜 **Historial** | Apunta tus combates reales (los del simulador se guardan solos): % de victorias, racha, **rivales que más te ganan** y rendimiento de tus Pokémon. Las observaciones de *Mi colección* priorizan a esos rivales. |
@@ -136,6 +136,7 @@ Abre <http://localhost:5173>. Elige el formato arriba a la derecha (**👤 Indiv
 | `npm test` | Tests (Vitest): motor de combate, IA, análisis, copias de seguridad, OCR… |
 | `npm run build` / `npm run preview` | Compilar y servir la versión de producción (con la API) |
 | `npm run gen:meta` | Descargar el meta actual (tiers y sets) de pokechamp.gg |
+| `npm run gen:items` | Regenerar los iconos de objetos (hoja de iconos de Showdown) |
 | `npm run gen:abilities` · `gen:learnsets` · `gen:es` | Regenerar habilidades, movimientos por especie y nombres en español |
 | `npm run validate` | Comprobar que todos los sets del meta son válidos |
 | `npm run lint` | Linter |
@@ -152,6 +153,7 @@ En una **base de datos SQLite local**: `data/champions.db` (no se sube a git). U
 | `candidates` | La selección de reclutamiento en curso |
 | `settings` | Formato elegido |
 | `battles` | Historial de combates (reales y del simulador) |
+| `saved_teams` | Tus equipos guardados (nombre, miembros y objeto propio de cada miembro) |
 
 ---
 

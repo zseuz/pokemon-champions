@@ -100,7 +100,7 @@ export function save(key: string, value: unknown) {
 // ───────────────────────── Base de datos local (SQLite vía /api) ─────────────────────────
 
 /** Claves que se sincronizan con la base de datos. */
-export const DB_KEYS = ['pkmn-champions-box', 'pkmn-champions-teams', 'pkmn-champions-items', 'pkmn-champions-candidates', 'pkmn-champions-format', 'pkmn-champions-history'];
+export const DB_KEYS = ['pkmn-champions-box', 'pkmn-champions-teams', 'pkmn-champions-items', 'pkmn-champions-candidates', 'pkmn-champions-format', 'pkmn-champions-history', 'pkmn-champions-teambook'];
 
 export type DbStatus = 'db' | 'migrated' | 'offline' | 'error';
 export const dbState: { status: DbStatus; path?: string } = { status: 'offline' };
@@ -159,6 +159,7 @@ export async function hydrateFromDb(): Promise<DbStatus> {
 export const STORAGE_KEYS = {
   teams: 'pkmn-champions-teams', oldTeam: 'pkmn-champions-team', box: 'pkmn-champions-box',
   inv: 'pkmn-champions-items', format: 'pkmn-champions-format', history: 'pkmn-champions-history',
+  teamBook: 'pkmn-champions-teambook',
 } as const;
 
 function loadTeams(): Teams {

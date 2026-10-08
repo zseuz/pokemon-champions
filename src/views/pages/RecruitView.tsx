@@ -8,7 +8,7 @@ import { effectiveSpecies, type PokemonSet } from '../../models/domain/sets';
 import { type BoxEntry } from '../../models/repository/store';
 import { Catalog } from '../components/Catalog';
 import { Selection } from './SelectionView';
-import { Sprite, Types } from '../components/common';
+import { Sprite, Types, ItemIcon } from '../components/common';
 
 
 interface Props {
@@ -141,7 +141,7 @@ function ItemsView({ format, team, setTeam, box, inventory, setInventory }: Prop
         <div className="chips">
           {inventory.length === 0 && <span className="muted small">Indica qué objetos tienes y te diré cuál ponerle a cada Pokémon.</span>}
           {inventory.map((i) => (
-            <span key={i} className="chip">{itemName(i)} <button className="link" onClick={() => setInventory(inventory.filter((x) => x !== i))}>✕</button></span>
+            <span key={i} className="chip"><ItemIcon item={i} size={20} /> {itemName(i)} <button className="link" onClick={() => setInventory(inventory.filter((x) => x !== i))}>✕</button></span>
           ))}
         </div>
       </div>
@@ -166,8 +166,8 @@ function ItemsView({ format, team, setTeam, box, inventory, setInventory }: Prop
                   return (
                     <tr key={a.species}>
                       <td className="left"><Sprite species={a.item ? effectiveSpecies({ ...team[i], item: a.item }, true) : a.species} size={36} /> {a.species}</td>
-                      <td className="muted">{team[i].item || '—'}</td>
-                      <td className={same ? '' : 'changed'}><b>{a.item ? itemName(a.item) : '— ninguno —'}</b>{same && <span className="muted small"> (igual)</span>}</td>
+                      <td className="muted">{team[i].item ? <><ItemIcon item={team[i].item} size={20} /> {itemName(team[i].item)}</> : '—'}</td>
+                      <td className={same ? '' : 'changed'}><b>{a.item ? <><ItemIcon item={a.item} size={20} /> {itemName(a.item)}</> : '— ninguno —'}</b>{same && <span className="muted small"> (igual)</span>}</td>
                       <td className="left small wrap-cell">{a.reason}</td>
                       <td className="left small wrap-cell">{a.alternatives.map((x) => `${x.item} (${Math.round(x.score)})`).join(', ') || '—'}</td>
                     </tr>

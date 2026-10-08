@@ -5,12 +5,14 @@ import type { PickerOption } from '../../controllers/viewModels';
 export type { PickerOption } from '../../controllers/viewModels';
 
 /** Desplegable con buscador que agrupa opciones y resalta las recomendadas. */
-export function Picker({ value, options, onChange, placeholder, display }: {
+export function Picker({ value, options, onChange, placeholder, display, icon }: {
   value: string;
   options: PickerOption[];
   onChange: (v: string) => void;
   placeholder?: string;
   display?: string;
+  /** imagen junto a cada opción (p. ej. el icono del objeto) */
+  icon?: (value: string) => React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState('');
@@ -61,7 +63,8 @@ export function Picker({ value, options, onChange, placeholder, display }: {
   return (
     <div className="picker-field" ref={ref}>
       <button ref={btnRef} type="button" className="picker-btn" onClick={() => { setOpen(!open); setQ(''); }}>
-        <span className={value ? '' : 'muted'}>{display ?? current?.label ?? (value || placeholder || 'Elegir…')}</span>
+        {value && icon?.(value)}
+        <span className={`picker-label${value ? '' : ' muted'}`}>{display ?? current?.label ?? (value || placeholder || 'Elegir…')}</span>
         {current?.recommended && <span className="star" title="Recomendado">★</span>}
         <span className="caret">▾</span>
       </button>
@@ -81,6 +84,7 @@ export function Picker({ value, options, onChange, placeholder, display }: {
                   >
                     <span className="picker-opt-main">
                       {o.recommended && <span className="star">★</span>}
+                      {o.value && icon?.(o.value)}
                       <b>{o.label}</b>
                       {o.score != null && !o.disabled && <span className="picker-score">{Math.round(o.score)}</span>}
                     </span>

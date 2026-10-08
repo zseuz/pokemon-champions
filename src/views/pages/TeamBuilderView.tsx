@@ -2,22 +2,25 @@ import { useTeamBuilderController } from '../../controllers/useTeamBuilderContro
 import { FORMAT_ES, type Format } from '../../models/data/meta';
 import { getMove, getSpecies, STAT_ES } from '../../models/domain/dex';
 import { effectiveSpecies, finalStats, type PokemonSet } from '../../models/domain/sets';
-import { Sprite, TypeBadge, Types } from '../components/common';
+import { Sprite, TypeBadge, Types, ItemIcon } from '../components/common';
 import { tierColor } from '../theme';
 import { SetEditor } from '../components/SetEditor';
+import { abilityName } from '../../models/domain/abilities';
+import { itemName } from '../format';
 
 const multLabel = (x: number) => (x === 0 ? '0' : x === 0.25 ? '¼' : x === 0.5 ? '½' : x === 1 ? '' : x === 2 ? '2' : x === 4 ? '4' : String(x));
 
-export function TeamBuilder({ team, setTeam, format, onRecruit }: {
+export function TeamBuilder({ team, setTeam, format, onRecruit, teamName, ownItems = [], resetItem }: {
   team: PokemonSet[]; setTeam: (t: PokemonSet[]) => void; format: Format; onRecruit: (s: PokemonSet) => void;
+  teamName?: string; ownItems?: string[]; resetItem?: (species: string) => void;
 }) {
   const { editing, setEditing, adding, setAdding, chart, coverage, roles, warns, threatRows, recs, add } = useTeamBuilderController({ team, setTeam, format, onRecruit });
   return (
     <div>
       <div className="section-head">
         <div>
-          <h2>Mi equipo de {FORMAT_ES[format]} <span className="muted">({team.length}/6)</span></h2>
-          <p className="muted">Recluta desde el Ranking o busca cualquier Pokémon de Champions. Se guarda automáticamente.</p>
+          <h2>{teamName ?? 'Mi equipo'} · {FORMAT_ES[format]} <span className="muted">({team.length}/6)</span></h2>
+          <p className="muted">Recluta desde el Ranking o busca cualquier Pokémon de Champions. Se guarda automáticamente. Los <b>objetos</b> que cambies aquí son solo de este equipo; el resto del set se guarda en tu colección.</p>
         </div>
         <div className="filters">
           <input
@@ -41,7 +44,15 @@ export function TeamBuilder({ team, setTeam, format, onRecruit }: {
                 <div>
                   <b>{s.species}</b>{mega !== s.species && <span className="mega-tag">Mega</span>}
                   <div><Types species={mega} /></div>
-                  <div className="muted small">{s.ability} · @ {s.item || '—'}</div>
+                  <div className="muted small">{abilityName(s.ability)}</div>
+                  <div className="small team-item">
+                    {s.item ? <><ItemIcon item={s.item} /> {itemName(s.item)}</> : <span className="muted">Sin objeto</span>}
+                    {ownItems.includes(s.species) && (
+                      <span className="own-item" title="Objeto solo de este equipo (en tu colección lleva otro)">
+                        solo en este equipo{resetItem && <button className="link" onClick={() => resetItem(s.species)} title="Usar el objeto de tu colección">↺</button>}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
               <ul className="moves">
@@ -178,6 +189,7 @@ export function TeamBuilder({ team, setTeam, format, onRecruit }: {
           set={team[editing]} format={format} team={team}
           onCancel={() => setEditing(null)}
           onSave={(s) => { const t = [...team]; t[editing] = s; setTeam(t); setEditing(null); }}
+          itemNote={`El objeto se guarda solo para «${teamName ?? 'este equipo'}». Habilidad, movimientos, naturaleza y Stat Points se guardan en tu colección.`}
         />
       )}
     </div>

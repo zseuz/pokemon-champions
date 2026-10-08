@@ -5,7 +5,7 @@ import { getMove, getSpecies, STAT_ES, STATS, TYPE_ES, TYPES } from '../../model
 import { moveLabel, natureEs, speciesEs } from '../../models/domain/es';
 import { itemName } from '../format';
 import { defaultSet, effectiveSpecies } from '../../models/domain/sets';
-import { Sprite, TypeBadge, Types } from '../components/common';
+import { Sprite, TypeBadge, Types, ItemIcon } from '../components/common';
 import { tierColor } from '../theme';
 import { InsightModal } from '../components/Insight';
 
@@ -90,7 +90,7 @@ export function Ranking({ onRecruit, teamSpecies, boxSpecies, format }: {
                           {e.set ? (
                             <div className="set-box">
                               <div className="muted small">Set más usado (y % de jugadores que lo llevan)</div>
-                              <div><b>{speciesEs(e.set.species)}</b> @ {e.set.item ? itemName(e.set.item) : '—'} {pct(e.setPct?.item)}</div>
+                              <div><b>{speciesEs(e.set.species)}</b> @ {e.set.item ? <><ItemIcon item={e.set.item} size={20} /> {itemName(e.set.item)}</> : '—'} {pct(e.setPct?.item)}</div>
                               <div>Habilidad: {abilityName(e.set.ability)} {pct(e.setPct?.ability)}</div>
                               <div>Naturaleza: {natureEs(e.set.nature)} ({e.set.nature}) {pct(e.setPct?.nature)}</div>
                               <div className="muted small">SP: {STATS.filter((s) => e.set!.sp[s]).map((s) => `${e.set!.sp[s]} ${STAT_ES[s]}`).join(' / ')} {pct(e.setPct?.spread)}</div>

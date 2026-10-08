@@ -2,7 +2,7 @@ import { useSetEditorController } from '../../controllers/useSetEditorController
 import { ALL_ABILITIES, ALL_ITEMS, ALL_MOVES, ALL_SPECIES, getMove, STAT_ES, STATS } from '../../models/domain/dex';
 import { SP_MAX_STAT, SP_MAX_TOTAL, type PokemonSet } from '../../models/domain/sets';
 import { FORMAT_ES, type Format } from '../../models/data/meta';
-import { Sprite, TypeBadge, Types } from './common';
+import { Sprite, TypeBadge, Types, ItemIcon } from './common';
 import { Picker } from './Picker';
 import { abilityDesc, abilityName, legalAbilities } from '../../models/domain/abilities';
 import { itemName } from '../format';
@@ -10,8 +10,10 @@ import { moveLabel } from '../../models/domain/es';
 import { BuildPanel, MatchupPanel } from './Insight';
 
 
-export function SetEditor({ set, onSave, onCancel, format = 'doubles', team = [] }: {
+export function SetEditor({ set, onSave, onCancel, format = 'doubles', team = [], itemNote }: {
   set: PokemonSet; onSave: (s: PokemonSet) => void; onCancel: () => void; format?: Format; team?: PokemonSet[];
+  /** aviso bajo el objeto (p. ej. que es propio del equipo) */
+  itemNote?: string;
 }) {
   const { s, setS, errors, stats, total, meta, upd, validSpecies, tab, setTab, natureLabel, natureOptions, learn, moveOptions, abilityOptions, itemOptions } = useSetEditorController(set, format, team);
   return (
@@ -48,7 +50,8 @@ export function SetEditor({ set, onSave, onCancel, format = 'doubles', team = []
             {s.ability && <span className="field-help">{abilityDesc(s.ability)}{validSpecies && !legalAbilities(s.species).includes(s.ability) && <b className="bad"> · {s.species} no puede tener esta habilidad</b>}</span>}
           </label>
           <label>Objeto
-            <Picker value={s.item} options={itemOptions} display={s.item ? itemName(s.item) : undefined} onChange={(v) => upd({ item: v })} placeholder="Sin objeto" />
+            <Picker value={s.item} options={itemOptions} display={s.item ? itemName(s.item) : undefined} onChange={(v) => upd({ item: v })} placeholder="Sin objeto" icon={(v) => <ItemIcon item={v} />} />
+            {itemNote && <span className="field-help own-item-note">🧩 {itemNote}</span>}
             {s.item && <span className="field-help">{itemOptions.find((o) => o.value === s.item)?.detail}</span>}
           </label>
           <label>Naturaleza

@@ -6,6 +6,7 @@ import type { Format } from '../data/meta';
 import { getSpecies } from '../domain/dex';
 import type { PokemonSet } from '../domain/sets';
 import { normalizeBox, type BoxEntry, type TeamIds } from './store';
+import { normalizeBook, type TeamBook } from './teams';
 
 export const BACKUP_VERSION = 1;
 
@@ -16,13 +17,15 @@ export interface Backup {
   format: Format;
   box: BoxEntry[];
   teams: TeamIds;
+  /** todos tus equipos guardados (con sus objetos); copias antiguas solo traen `teams` */
+  teamBook?: TeamBook;
   inventory: string[];
 }
 
-export function createBackup(data: { format: Format; box: BoxEntry[]; teamIds: TeamIds; inventory: string[] }): Backup {
+export function createBackup(data: { format: Format; box: BoxEntry[]; teamIds: TeamIds; inventory: string[]; teamBook?: TeamBook }): Backup {
   return {
     app: 'champions-coach', version: BACKUP_VERSION, exportedAt: new Date().toISOString(),
-    format: data.format, box: data.box, teams: data.teamIds, inventory: data.inventory,
+    format: data.format, box: data.box, teams: data.teamIds, inventory: data.inventory, teamBook: data.teamBook,
   };
 }
 
@@ -45,6 +48,7 @@ export function parseBackup(text: string): Backup {
   return {
     app: 'champions-coach', version: BACKUP_VERSION, exportedAt: b.exportedAt ?? '',
     format: b.format === 'singles' ? 'singles' : 'doubles', box, teams,
+    teamBook: b.teamBook ? normalizeBook({ ...b.teamBook, teams: b.teamBook.teams?.map((t) => ({ ...t, members: (t.members ?? []).filter((m) => known.has(m.species)) })) }, teams) : undefined,
     inventory: Array.isArray(b.inventory) ? b.inventory.filter((x) => typeof x === 'string') : [],
   };
 }
