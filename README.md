@@ -240,7 +240,7 @@ flowchart LR
 
 **Mirar un turno adelante.** Combina las mejores jugadas de cada Pokémon, simula el turno varias veces con el motor de combate (el daño es aleatorio) contra la mejor respuesta del rival y valora la posición resultante (Pokémon vivos, PS, mejoras, estados, trampas, Canto Mortal). Contra la IA *Difícil*, la *Experto* gana alrededor del 60 % en individuales y el 70 % en dobles.
 
-**Leer capturas.** Tesseract.js (español + inglés, se descarga la primera vez) lee el texto; la imagen se amplía y se invierte si el fondo es oscuro. Después se buscan nombres de Pokémon, habilidades, movimientos y naturalezas tolerando pequeños errores de lectura, y se agrupan en candidatos que revisas antes de añadir.
+**Leer capturas.** Tesseract.js (inglés + español, se descarga la primera vez) lee la imagen en **dos pasadas** (en grises y solo el texto blanco), porque el juego mezcla texto blanco sobre morado y texto oscuro sobre barras blancas. Las columnas de la pantalla (estadísticas a la izquierda, movimientos a la derecha) se separan por la posición de cada palabra, y se leen los **Stat Points** de cada fila, la **naturaleza** («Stat Alignment»), la habilidad y los 4 movimientos. Después se buscan nombres de Pokémon, habilidades, movimientos y naturalezas tolerando pequeños errores de lectura, y se agrupan en candidatos que revisas antes de añadir.
 
 **Selección del juego.** Califica el ejemplar (habilidad 30 %, movimientos 40 %, naturaleza 18 %, Stat Points 12 %) frente al build ideal, mide su aporte al equipo con el mismo modelo que el armado automático, su balance contra los 100 más usados y, si ya tienes esa especie, si **mejora tu ejemplar**.
 

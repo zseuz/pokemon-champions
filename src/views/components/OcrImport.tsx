@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { useOcrController } from '../../controllers/useOcrController';
 import { abilityName } from '../../models/domain/abilities';
+import { STATS, STAT_ES } from '../../models/domain/dex';
 import { moveEs, natureEs, speciesEs } from '../../models/domain/es';
 import type { PokemonSet } from '../../models/domain/sets';
 import { Sprite } from './common';
 
 /** Añadir candidatos leyendo una captura de pantalla de la selección del juego. */
 export function OcrImport({ onAdd }: { onAdd: (sets: PokemonSet[]) => void }) {
-  const { status, progress, text, setText, result, selected, toggle, error, preview, read, interpret, add, reset } = useOcrController(onAdd);
+  const { status, progress, step, text, setText, result, selected, toggle, error, preview, read, interpret, add, reset } = useOcrController(onAdd);
   const [showText, setShowText] = useState(false);
   const busy = status === 'loading' || status === 'reading';
 
@@ -23,7 +24,7 @@ export function OcrImport({ onAdd }: { onAdd: (sets: PokemonSet[]) => void }) {
 
       {busy && (
         <div className="ocr-progress">
-          {status === 'loading' ? 'Cargando el lector de texto (la primera vez descarga ~15 MB)…' : `Leyendo la captura… ${progress}%`}
+          {status === 'loading' ? 'Cargando el lector de texto (la primera vez descarga ~15 MB)…' : `Leyendo la captura (pasada ${step} de 2)… ${progress}%`}
           <div className="usage-bar"><div style={{ width: `${status === 'loading' ? 5 : progress}%` }} /></div>
         </div>
       )}
@@ -41,6 +42,7 @@ export function OcrImport({ onAdd }: { onAdd: (sets: PokemonSet[]) => void }) {
                 <div>
                   <b>{speciesEs(s.species)}</b> <span className="muted small">· {abilityName(s.ability)} · {natureEs(s.nature)}</span>
                   <div className="small">{s.moves.map(moveEs).join(' · ') || <span className="muted">sin movimientos</span>}</div>
+                  <div className="small muted">Stat Points: {STATS.filter((k) => s.sp[k]).map((k) => `${STAT_ES[k]} ${s.sp[k]}`).join(' · ') || 'sin leer'}</div>
                 </div>
               </label>
             ))}
