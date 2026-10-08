@@ -7,6 +7,7 @@ import { type BoxEntry } from '../../models/repository/store';
 import { Sprite, TypeBadge, Types } from '../components/common';
 import { SetEditor } from '../components/SetEditor';
 import { SpeciesGrid } from '../components/SpeciesGrid';
+import { OcrImport } from '../components/OcrImport';
 
 
 const gradeClass = (p: number) => (p >= 80 ? 'g-hi' : p >= 55 ? 'g-mid' : 'g-lo');
@@ -34,6 +35,7 @@ export function Selection({ format, team, setTeam, box, setBox }: Props) {
           la naturaleza ("Variación de características") y los Stat Points. Puedes buscar los nombres en español o en inglés.
           Te diré cuál conviene más para tu equipo de <b>{FORMAT_ES[format]}</b>, teniendo en cuenta que cada ejemplar trae una habilidad y un set distintos.
         </p>
+        <OcrImport onAdd={(sets) => { setCands([...cands, ...sets]); setShowGrid(false); }} />
         <div className="row wrap">
           <button onClick={() => setShowGrid(!showGrid)}>{showGrid ? '▲ Ocultar buscador' : '▼ + Añadir candidato'}</button>
           {cands.length > 0 && <button className="danger" onClick={() => { if (confirm('¿Borrar la selección actual?')) { setCands([]); setRecruited(null); } }}>Nueva selección</button>}

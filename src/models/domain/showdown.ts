@@ -14,6 +14,7 @@ import { toID } from '@smogon/calc';
 import es from '../data/es.json';
 import { ALL_ABILITIES, ALL_ITEMS, ALL_MOVES, ALL_SPECIES, NATURES, STATS, type StatID } from './dex';
 import { emptySP, type PokemonSet } from './sets';
+import { CHAMPIONS_MOVES } from './es';
 
 const STAT_NAMES: Record<StatID, string> = { hp: 'HP', atk: 'Atk', def: 'Def', spa: 'SpA', spd: 'SpD', spe: 'Spe' };
 const STAT_FROM: Record<string, StatID> = { hp: 'hp', ps: 'hp', atk: 'atk', ata: 'atk', def: 'def', spa: 'spa', atesp: 'spa', spd: 'spd', defesp: 'spd', spe: 'spe', vel: 'spe' };
@@ -34,7 +35,7 @@ export const teamToShowdown = (team: PokemonSet[]) => team.map(setToShowdown).jo
 
 // ── Lectura: busca nombres en inglés o en español sin importar mayúsculas, tildes ni guiones ──
 const D = es as { moves: Record<string, string>; abilities: Record<string, string>; items: Record<string, string>; natures: Record<string, string> };
-const key = (s: string) => toID(s.normalize('NFD').replace(/[̀-ͯ]/g, ''));
+export const key = (s: string) => toID(s.normalize('NFD').replace(/[̀-ͯ]/g, ''));
 function index(names: string[], esMap: Record<string, string> = {}) {
   const m = new Map<string, string>();
   for (const n of names) {
@@ -43,11 +44,12 @@ function index(names: string[], esMap: Record<string, string> = {}) {
   }
   return m;
 }
-const SPECIES = index(ALL_SPECIES);
+/** Índices nombre (inglés o español, normalizado) → nombre interno; también los usa el OCR. */
+export const SPECIES = index(ALL_SPECIES);
 const ITEMS = index(ALL_ITEMS, D.items);
-const ABILITIES = index(ALL_ABILITIES, D.abilities);
-const MOVES = index(ALL_MOVES, { ...D.moves, 'Poison Jab': 'Golpe Venenoso', Acrobatics: 'Acrobacia' });
-const NATURE_IDX = index(NATURES.map((n) => n.name), D.natures);
+export const ABILITIES = index(ALL_ABILITIES, D.abilities);
+export const MOVES = index(ALL_MOVES, { ...D.moves, ...CHAMPIONS_MOVES });
+export const NATURE_IDX = index(NATURES.map((n) => n.name), D.natures);
 
 export interface ParseResult { sets: PokemonSet[]; warnings: string[] }
 

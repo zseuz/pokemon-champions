@@ -612,3 +612,18 @@ button.preview-mon.picked { border-color: var(--accent); }
 
 .plan-line { margin-bottom: 8px; padding: 6px 10px; border-radius: 8px; background: #1f2b55; }
 .plan-line .up { color: #8bf0a5; } .plan-line .down { color: #ff9a9a; }
+
+/* ── Lector de capturas (OCR) ── */
+.ocr { margin: 8px 0 12px; padding: 10px; border: 1px dashed var(--line); border-radius: 10px; }
+.file-btn { display: inline-block; cursor: pointer; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--accent2); background: #1f2b55; font-weight: 600; }
+.file-btn.disabled { opacity: .5; cursor: default; }
+kbd { border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; font-size: .8em; }
+.ocr-progress { margin-top: 8px; font-size: .9rem; }
+.ocr-result { margin-top: 10px; }
+.ocr-previews { display: flex; gap: 6px; flex-wrap: wrap; }
+.ocr-previews img { max-height: 120px; border-radius: 6px; border: 1px solid var(--line); }
+.ocr-cands { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 6px; margin: 8px 0; }
+.ocr-cand { display: flex; align-items: center; gap: 8px; padding: 6px; border: 1px solid var(--line); border-radius: 8px; opacity: .5; cursor: pointer; }
+.ocr-cand.on { opacity: 1; border-color: var(--accent2); }
+.warn-list { color: #f5c97a; margin: 4px 0 8px; padding-left: 18px; }
+.ocr-text textarea { width: 100%; font-family: monospace; margin: 6px 0; }

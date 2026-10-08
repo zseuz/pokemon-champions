@@ -19,7 +19,8 @@
   "dependencies": {
     "@smogon/calc": "^0.12.0",
     "react": "^19.2.8",
-    "react-dom": "^19.2.8"
+    "react-dom": "^19.2.8",
+    "tesseract.js": "^6.0.1"
   },
   "devDependencies": {
     "@pkmn/dex": "^0.10.11",

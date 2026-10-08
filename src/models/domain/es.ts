@@ -7,7 +7,7 @@ const D = es as { moves: Record<string, string>; abilities: Record<string, strin
  * Nombres que Pokémon Champions muestra distinto a la traducción clásica
  * (o movimientos nuevos sin traducción en PokeAPI). Añade aquí los que encuentres.
  */
-const CHAMPIONS_MOVES: Record<string, string> = {
+export const CHAMPIONS_MOVES: Record<string, string> = {
   'Poison Jab': 'Golpe Venenoso',
   Acrobatics: 'Acrobacia',
   'Dire Claw': 'Garra Nociva',
