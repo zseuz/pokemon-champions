@@ -3,13 +3,16 @@ import { FORMAT_ES, META_INFOS, type Format } from '../models/data/meta';
 import type { AppController, Tab } from '../controllers/useAppController';
 import { DataLists } from './components/SetEditor';
 import { MetaStatus } from './components/MetaStatus';
-import { Assistant } from './pages/AssistantView';
-import { Collection } from './pages/CollectionView';
-import { Ranking } from './pages/RankingView';
-import { Recruit } from './pages/RecruitView';
-import { Simulator } from './pages/SimulatorView';
-import { TeamBuilder } from './pages/TeamBuilderView';
-import { History } from './pages/HistoryView';
+import { lazy, Suspense } from 'react';
+
+// cada pestaña se carga al abrirla (la primera carga de la app es más ligera)
+const Assistant = lazy(() => import('./pages/AssistantView').then((m) => ({ default: m.Assistant })));
+const Collection = lazy(() => import('./pages/CollectionView').then((m) => ({ default: m.Collection })));
+const Ranking = lazy(() => import('./pages/RankingView').then((m) => ({ default: m.Ranking })));
+const Recruit = lazy(() => import('./pages/RecruitView').then((m) => ({ default: m.Recruit })));
+const Simulator = lazy(() => import('./pages/SimulatorView').then((m) => ({ default: m.Simulator })));
+const TeamBuilder = lazy(() => import('./pages/TeamBuilderView').then((m) => ({ default: m.TeamBuilder })));
+const History = lazy(() => import('./pages/HistoryView').then((m) => ({ default: m.History })));
 
 const TABS: [Tab, string][] = [
   ['ranking', '🏆 Ranking'],
@@ -61,6 +64,7 @@ export function AppView(c: AppController) {
         </nav>
       </header>
       <main>
+        <Suspense fallback={<p className="muted">Cargando…</p>}>
         {tab === 'ranking' && (
           <Ranking format={format} teamSpecies={team.map((s) => s.species)} boxSpecies={box.map((b) => b.species)} onRecruit={c.recruitFromRanking} />
         )}
@@ -74,6 +78,7 @@ export function AppView(c: AppController) {
         {tab === 'assistant' && <Assistant key={format} team={teams[format]} format={format} />}
         {tab === 'sim' && <Simulator key={format} team={teams[format]} format={format} onFinish={c.addBattle} />}
         {tab === 'history' && <History format={format} history={c.history} team={team} addBattle={c.addBattle} removeBattle={c.removeBattle} />}
+        </Suspense>
       </main>
       <footer className="muted small">
         Daños calculados con @smogon/calc (mecánicas de Pokémon Champions). Proyecto de fans, sin afiliación con Nintendo / The Pokémon Company.

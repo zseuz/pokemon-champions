@@ -627,3 +627,6 @@ kbd { border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; font-si
 .ocr-cand.on { opacity: 1; border-color: var(--accent2); }
 .warn-list { color: #f5c97a; margin: 4px 0 8px; padding-left: 18px; }
 .ocr-text textarea { width: 100%; font-family: monospace; margin: 6px 0; }
+
+/* en pantallas estrechas, las celdas de rejilla pueden encogerse (las tablas hacen scroll dentro) */
+.dmg-tables > *, .field-grid > *, .preview-grid > *, .advice-grid > * { min-width: 0; }

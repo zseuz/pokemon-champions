@@ -35,11 +35,12 @@
 | Pestaña | Qué hace |
 |---|---|
 | 🏆 **Ranking** | Los **262 Pokémon** del ladder de cada formato en tiers **S → F**, con puesto, tendencia respecto a la temporada anterior y el **set más usado con el % de jugadores** que lleva cada parte. |
-| 🤝 **Reclutamiento** | **🎲 Selección del juego**: registras los candidatos que te ofrece el juego *tal como vienen* (habilidad, ataques, naturaleza, Stat Points) y te dice **cuál elegir**: calidad del ejemplar, aporte a tu equipo, enfrentamientos contra el meta y si **ya tienes uno igual o mejor**. **🔍 Buscar Pokémon**: catálogo visual filtrable por nombre y tipo. **🤝 Sinergia por habilidad**: quién combina con tu equipo (climas, campos, Liviano + semillas, Pararrayos, Espacio Raro…). **🎒 Mis objetos**: reparto óptimo de tu inventario. |
-| 📚 **Mi colección** | Todos tus reclutados con **tu set** (el mismo en individuales y dobles). **🩺 Observaciones del equipo** (debilidades compartidas, roles que faltan, amenazas, objetos, sets mejorables), mejores incorporaciones/cambios, aporte de cada miembro y **armado automático** del mejor equipo. |
+| 🤝 **Reclutamiento** | **🎲 Selección del juego**: registras los candidatos que te ofrece el juego *tal como vienen* (habilidad, ataques, naturaleza, Stat Points) — a mano o **📷 leyendo una captura de pantalla** (OCR) — y te dice **cuál elegir**: calidad del ejemplar, aporte a tu equipo, enfrentamientos contra el meta y si **ya tienes uno igual o mejor**. **🔍 Buscar Pokémon**: catálogo visual filtrable por nombre y tipo. **🤝 Sinergia por habilidad**: quién combina con tu equipo (climas, campos, Liviano + semillas, Pararrayos, Espacio Raro…). **🎒 Mis objetos**: reparto óptimo de tu inventario. |
+| 📚 **Mi colección** | Todos tus reclutados con **tu set** (el mismo en individuales y dobles). **🩺 Observaciones del equipo** (debilidades compartidas, roles que faltan, amenazas, objetos, sets mejorables), mejores incorporaciones/cambios, aporte de cada miembro y **armado automático** del mejor equipo. **💾 Copia de seguridad** (JSON) e **importar/exportar en formato Showdown**. |
 | 🧩 **Mi equipo** | Equipo de 6 por formato: tabla defensiva, cobertura ofensiva, roles, amenazas del meta y recomendaciones. |
-| 🧠 **Asistente** | **Individuales (3 vs 3)** o **Dobles (2 vs 2)**: configuras la situación (PS, estados, debilitados, cambios de stats, clima, campo, Espacio Raro, Viento Afín, pantallas) y te recomienda **atacar o cambiar**, predice al rival y muestra el daño exacto. |
-| ⚔️ **Simulador** | Combates dobles contra una IA con equipos del meta, con botón **💡 Consejo**. |
+| 🧠 **Asistente** | **Individuales (3 vs 3)** o **Dobles (2 vs 2)**: configuras la situación (PS, estados, debilitados, cambios de stats, clima, campo, Espacio Raro, Viento Afín, pantallas) y te recomienda **atacar o cambiar**, predice al rival y muestra el daño exacto. **🔮 Mira un turno adelante**: simula cada jugada contra la mejor respuesta del rival. |
+| ⚔️ **Simulador** | Combates **individuales (3 vs 3)** o **dobles (4 de 6)** contra una IA con equipos del meta; dificultad hasta **Experto** (mira un turno adelante) y botón **💡 Consejo**. Trampas, Otra Vez, Canto Mortal, Rugido, Ditto, ataques de carga… |
+| 📜 **Historial** | Apunta tus combates reales (los del simulador se guardan solos): % de victorias, racha, **rivales que más te ganan** y rendimiento de tus Pokémon. Las observaciones de *Mi colección* priorizan a esos rivales. |
 
 **Editor de sets** (desde cualquier Pokémon), con tres pestañas:
 
@@ -126,9 +127,13 @@ npm run dev
 
 Abre <http://localhost:5173>. Elige el formato arriba a la derecha (**👤 Individuales / 👥 Dobles**).
 
+**📱 Desde el móvil** (misma red Wi-Fi): arranca con `npm run dev:lan` y abre en el móvil la dirección *Network* que muestra la consola (p. ej. `http://192.168.1.20:5173`). Windows puede pedir permiso en el firewall la primera vez. Ojo: cualquiera en tu red podría abrir la app y ver/editar tus datos, úsalo solo en redes de confianza.
+
 | Comando | Para qué |
 |---|---|
 | `npm run dev` | App + API local (base de datos) en modo desarrollo |
+| `npm run dev:lan` | Igual, accesible desde otros dispositivos de tu red (móvil, tablet) |
+| `npm test` | Tests (Vitest): motor de combate, IA, análisis, copias de seguridad, OCR… |
 | `npm run build` / `npm run preview` | Compilar y servir la versión de producción (con la API) |
 | `npm run gen:meta` | Descargar el meta actual (tiers y sets) de pokechamp.gg |
 | `npm run gen:abilities` · `gen:learnsets` · `gen:es` | Regenerar habilidades, movimientos por especie y nombres en español |
@@ -146,6 +151,7 @@ En una **base de datos SQLite local**: `data/champions.db` (no se sube a git). U
 | `inventory` | Tus objetos |
 | `candidates` | La selección de reclutamiento en curso |
 | `settings` | Formato elegido |
+| `battles` | Historial de combates (reales y del simulador) |
 
 ---
 
@@ -189,6 +195,8 @@ flowchart LR
 | `useTeamBuilderController` | Mi equipo | Tabla defensiva, cobertura, roles, amenazas, recomendaciones |
 | `useAssistantController` | Asistente | Escenario (3 vs 3 / 2 vs 2), recomendaciones, cambios, daño |
 | `useSimulatorController` · `useBattleController` · `useActionPickerController` | Simulador | Vista previa, turno, consejo, acciones de cada Pokémon |
+| `useHistoryController` | Historial | Apuntar combates, filtros y estadísticas |
+| `useOcrController` | Selección | Leer capturas con OCR e interpretarlas como candidatos |
 | `useSetEditorController` · `useBuildController` · `useMatchupController` | Editor de sets | Opciones recomendadas, build ideal, fuerte / débil |
 
 ### Cómo se generan los datos
@@ -228,6 +236,10 @@ flowchart LR
     D --> E["★ Recomendación<br/>+ predicción del rival"]
 ```
 
+**Mirar un turno adelante.** Combina las mejores jugadas de cada Pokémon, simula el turno varias veces con el motor de combate (el daño es aleatorio) contra la mejor respuesta del rival y valora la posición resultante (Pokémon vivos, PS, mejoras, estados, trampas, Canto Mortal). Contra la IA *Difícil*, la *Experto* gana alrededor del 60 % en individuales y el 70 % en dobles.
+
+**Leer capturas.** Tesseract.js (español + inglés, se descarga la primera vez) lee el texto; la imagen se amplía y se invierte si el fondo es oscuro. Después se buscan nombres de Pokémon, habilidades, movimientos y naturalezas tolerando pequeños errores de lectura, y se agrupan en candidatos que revisas antes de añadir.
+
 **Selección del juego.** Califica el ejemplar (habilidad 30 %, movimientos 40 %, naturaleza 18 %, Stat Points 12 %) frente al build ideal, mide su aporte al equipo con el mismo modelo que el armado automático, su balance contra los 100 más usados y, si ya tienes esa especie, si **mejora tu ejemplar**.
 
 **Armado automático.** Busca la combinación que maximiza fuerza en el meta + sinergia de habilidades + roles cubiertos − debilidades compartidas (búsqueda exhaustiva si hay pocas combinaciones; voraz con intercambios si hay muchas).
@@ -244,9 +256,9 @@ flowchart LR
 | % de uso de dobles | [Pikalytics](https://www.pikalytics.com/) | a mano en `src/models/data/meta.ts` |
 | Mecánicas, especies y daño | [@smogon/calc](https://github.com/smogon/damage-calc) | `npm update @smogon/calc` |
 | Habilidades y movimientos por especie | [Pokémon Showdown](https://github.com/pkmn/ps) (`@pkmn/dex`) | `gen:abilities`, `gen:learnsets` |
-| Nombres en español | [PokeAPI](https://pokeapi.co/) | `npm run gen:es` |
+| Nombres en español | [PokeAPI](https://pokeapi.co/) + [GameWith](https://gamewith.ai/pokemon-champions/es-es/moves) (movimientos de 9.ª gen.) | `npm run gen:es` |
 
-Al empezar una temporada nueva la cabecera muestra **🆕 ¡Temporada nueva!**: un clic descarga y valida el meta (equivale a `npm run gen:meta && npm run validate`). El botón **🔄 Meta** comprueba manualmente si hay datos nuevos. Los nombres que Champions traduce distinto a los juegos anteriores (p. ej. *Acrobacia*, *Golpe Venenoso*) se añaden en `CHAMPIONS_MOVES` de `src/models/domain/es.ts`.
+Al empezar una temporada nueva la cabecera muestra **🆕 ¡Temporada nueva!**: un clic descarga y valida el meta (equivale a `npm run gen:meta && npm run validate`). El botón **🔄 Meta** comprueba manualmente si hay datos nuevos. Los nombres que Champions traduce distinto a los juegos anteriores (p. ej. *Acrobacia*, *Golpe Venenoso*) se añaden en `CHAMPIONS_MOVES` de `src/models/domain/es.ts`; los 48 movimientos de 9.ª generación que PokeAPI no traduce están en `GEN9_MOVES` del mismo archivo.
 
 ---
 
@@ -256,34 +268,35 @@ Al empezar una temporada nueva la cabecera muestra **🆕 ¡Temporada nueva!**: 
 pokemon-champions/
 ├── server/                      Servidor MVC (se monta dentro de Vite)
 │   ├── routes.ts                rutas /api/* y plugin de Vite
-│   ├── controllers/             stateController: lógica de cada petición
+│   ├── controllers/             stateController (datos) y metaController (actualizar meta)
 │   └── models/                  stateModel: base de datos SQLite (data/champions.db)
 ├── src/
 │   ├── App.tsx                  une controlador y vista (punto de entrada MVC)
 │   ├── controllers/             hooks useXController (estado + acciones) y viewModels
 │   ├── models/
 │   │   ├── data/                meta.ts + JSON generados (pokechamp, abilities, learnsets, es)
-│   │   ├── domain/              dex, sets, habilidades, nombres en español, efectos de movimientos
-│   │   ├── engine/              battle (motor de combate), ai (asistente/IA), opponents
-│   │   ├── analysis/            teamAnalysis, synergy, build, items, candidates, observations
-│   │   └── repository/          store: persistencia (navegador + API local)
+│   │   ├── domain/              dex, sets, habilidades, nombres en español, efectos, Showdown, lectura de capturas
+│   │   ├── engine/              battle (motor de combate), ai (asistente/IA), lookahead, opponents
+│   │   ├── analysis/            teamAnalysis, synergy, build, items, candidates, observations, history
+│   │   └── repository/          store (persistencia), backup (copias), metaApi
 │   └── views/
 │       ├── AppView.tsx          cabecera, pestañas y página activa
 │       ├── pages/               RankingView, RecruitView, SelectionView, CollectionView,
-│       │                        TeamBuilderView, AssistantView, SimulatorView
+│       │                        TeamBuilderView, AssistantView, SimulatorView, HistoryView
 │       ├── components/          SetEditor, Insight, TeamReview, Picker, SpeciesSelect…
 │       ├── format.ts · theme.ts formateadores de texto y colores
 │       └── styles.css
+├── tests/                       tests de Vitest (se ejecutan también en GitHub Actions)
 ├── scripts/                     generadores de datos y validación
 └── docs/screenshots/            capturas del README
 ```
 
 ## Limitaciones
 
-- El **simulador** es de dobles; efectos poco comunes (Otra Vez, Canto Mortal…) no están implementados y el registro lo avisa.
+- El **simulador** cubre los efectos habituales del meta; algunos poco comunes (Sustituto, Relevo…) no están implementados y el registro lo avisa.
 - Los enfrentamientos son 1 contra 1 contra el set más común de cada rival, sin clima ni cambios de stats: son una guía, no un combate real.
 - Los movimientos que puede aprender cada Pokémon vienen de Showdown; si Champions cambia alguno, se regeneran con `npm run gen:learnsets`.
-- Unos 50 movimientos de 9.ª generación no tienen nombre en español en PokeAPI y se muestran en inglés.
+- El **OCR** funciona mejor con capturas nítidas y recortadas a una tarjeta; revisa siempre lo leído antes de añadirlo.
 
 ---
 
