@@ -5,6 +5,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { Format, MetaEntry } from '../models/data/meta';
 import { defaultSet, type PokemonSet } from '../models/domain/sets';
+import { parseShowdown, teamToShowdown } from '../models/domain/showdown';
+import { createBackup, importSets, mergeBackup, parseBackup } from '../models/repository/backup';
 import {
   addSpecies, dbState, load, loadAppState, onDbStatus, resolveTeams, save, STORAGE_KEYS, syncTeamIntoBox,
   type BoxEntry, type DbStatus, type TeamIds,
@@ -49,7 +51,39 @@ export function useAppController() {
     else alert(`${e.species} reclutado. Tu equipo ya tiene 6: lo tienes en Mi colección.`);
   };
 
+  // ── Copia de seguridad y formato Showdown ──
+  const backup = {
+    /** Copia completa lista para descargar. */
+    exportAll: () => createBackup({ format, box, teamIds, inventory }),
+    /** Restaura una copia: 'replace' sustituye todo; 'merge' añade lo que no tengas. */
+    importAll: (text: string, mode: 'replace' | 'merge'): string => {
+      const b = parseBackup(text);
+      if (mode === 'replace') {
+        setBox(b.box); setTeamIds(b.teams); setInventory(b.inventory); setFormat(b.format);
+        return `Copia restaurada: ${b.box.length} Pokémon, ${b.inventory.length} objetos.`;
+      }
+      const merged = mergeBackup({ box, inventory }, b);
+      const added = merged.box.length - box.length;
+      setBox(merged.box); setInventory(merged.inventory);
+      return `Combinado: ${added} Pokémon nuevos añadidos (tus sets actuales se mantienen).`;
+    },
+    /** Tu equipo del formato actual en texto Showdown. */
+    exportTeamText: () => teamToShowdown(team),
+    /** Pega uno o varios sets Showdown: van a tu colección y, si quieres, al equipo. */
+    importText: (text: string, toTeam: boolean): { message: string; warnings: string[] } => {
+      const { sets, warnings } = parseShowdown(text);
+      if (!sets.length) return { message: 'No se encontró ningún Pokémon en el texto.', warnings };
+      setBox((b) => importSets(b, sets));
+      if (toTeam) {
+        const names = sets.map((s) => s.species);
+        setTeamIds((prev) => ({ ...prev, [format]: [...new Set([...prev[format].filter((x) => !names.includes(x)), ...names])].slice(0, 6) }));
+      }
+      return { message: `${sets.length} Pokémon importados${toTeam ? ' y añadidos al equipo' : ''}.`, warnings };
+    },
+  };
+
   return {
+    backup,
     tab, setTab, format, setFormat, db, dbPath: dbState.path,
     box, setBox, teams, team, setTeam, inventory, setInventory,
     recruit, recruitFromRanking,

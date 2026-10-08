@@ -565,3 +565,13 @@ button.preview-mon.picked { border-color: var(--accent); }
 .owned-compare { font-size: .8rem; border-radius: 8px; padding: 3px 8px; background: var(--card2); margin-top: 2px; }
 .owned-compare.better { background: #1d3a2a; color: #8bf0a5; }
 .owned-compare.worse { background: #3a1d24; color: #ff9a9a; }
+
+/* ── Copia de seguridad / Showdown ── */
+.backup { padding: 10px 14px; }
+.backup-toggle { width: 100%; text-align: left; background: transparent; border: none; font-weight: 700; padding: 4px 0; }
+.backup-body { display: grid; grid-template-columns: 1fr 1.4fr; gap: 16px; margin-top: 10px; }
+.backup-col { display: flex; flex-direction: column; gap: 8px; }
+.backup-col h4 { margin: 0; }
+.backup-col textarea { width: 100%; font-family: ui-monospace, Consolas, monospace; font-size: .82rem; background: var(--card2); color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 8px; resize: vertical; }
+.backup-body > .good-msg, .backup-body > .errors { grid-column: 1 / -1; }
+@media (max-width: 760px) { .backup-body { grid-template-columns: 1fr; } }

@@ -8,6 +8,8 @@ import { type BoxEntry } from '../../models/repository/store';
 import { Sprite, TypeBadge, Types } from '../components/common';
 import { tierColor } from '../theme';
 import { SetEditor } from '../components/SetEditor';
+import { BackupPanel } from '../components/BackupPanel';
+import type { AppController } from '../../controllers/useAppController';
 import { TeamReview } from '../components/TeamReview';
 
 interface Props {
@@ -18,15 +20,17 @@ interface Props {
   setBox: (b: BoxEntry[]) => void;
   inventory: string[];
   onGoRecruit: () => void;
+  backup: AppController['backup'];
 }
 
 
-export function Collection({ format, team, setTeam, box, setBox, inventory, onGoRecruit }: Props) {
+export function Collection({ format, team, setTeam, box, setBox, inventory, onGoRecruit, backup }: Props) {
   const { recruitSpecies, saveSet, removeFromCollection, editingSet, isCustomEntry, q, setQ, type, setType, sort, setSort, expanded, setExpanded, editing, setEditing, locked, setLocked, size, setSize, built, busy, adding, setAdding, sets, advice, fitOf, typeCount, megaCount, metaCount, list, inTeam, addToTeam, swap, build, applyBuilt } = useCollectionController({ format, team, setTeam, box, setBox, inventory });
   if (box.length === 0) {
     return (
       <div>
         <h2>Mi colección</h2>
+        <BackupPanel backup={backup} formatName={FORMAT_ES[format]} />
         <div className="empty-state">
           Aún no has reclutado ningún Pokémon.<br /><br />
           <button className="primary" onClick={onGoRecruit}>🔍 Ir a reclutar</button>
@@ -50,6 +54,8 @@ export function Collection({ format, team, setTeam, box, setBox, inventory, onGo
           <button onClick={onGoRecruit}>🔍 Buscar más</button>
         </div>
       </div>
+
+      <BackupPanel backup={backup} formatName={FORMAT_ES[format]} />
 
       {/* Resumen */}
       <div className="coll-stats">

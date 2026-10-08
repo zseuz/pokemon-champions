@@ -65,7 +65,7 @@ export function AppView(c: AppController) {
           <Recruit format={format} team={team} setTeam={setTeam} box={box} setBox={setBox} inventory={inventory} setInventory={setInventory} onOpenCollection={() => setTab('collection')} />
         )}
         {tab === 'collection' && (
-          <Collection format={format} team={team} setTeam={setTeam} box={box} setBox={setBox} inventory={inventory} onGoRecruit={() => setTab('recruit')} />
+          <Collection format={format} team={team} setTeam={setTeam} box={box} setBox={setBox} inventory={inventory} onGoRecruit={() => setTab('recruit')} backup={c.backup} />
         )}
         {tab === 'team' && <TeamBuilder key={format} format={format} team={team} setTeam={setTeam} onRecruit={c.recruit} />}
         {DOUBLES_ONLY.includes(tab) && format === 'singles' && (
