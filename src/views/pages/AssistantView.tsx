@@ -8,16 +8,17 @@ import { canMega, type PokemonSet } from '../../models/domain/sets';
 import { DamageBar, HpBar, Sprite, TypeBadge, Types } from '../components/common';
 import { SetEditor } from '../components/SetEditor';
 import { SpeciesSelect } from '../components/SpeciesSelect';
+import type { DoublesBrief, Hit } from '../../models/analysis/doublesBrief';
 
 const STATUS_OPTS: [Status, string][] = [['', 'Sano'], ['brn', 'Quemado'], ['par', 'Paralizado'], ['psn', 'Envenenado'], ['tox', 'Tóxico'], ['slp', 'Dormido']];
 
 /**
  * Asistente de turno.
  * - Individuales: llevas 3 Pokémon y el rival 3; uno de cada lado en combate (1 contra 1).
- * - Dobles: 2 contra 2 (tus otros Pokémon del equipo cuentan como reserva para los cambios).
+ * - Dobles: cada uno lleva 4 de sus 6; 2 contra 2 en combate y 2 en reserva por lado.
  */
 export function Assistant({ team, format }: { team: PokemonSet[]; format: Format }) {
-  const { foeSetFor, damage, singles, N, mineIdx, setMineIdx, mine, setMine, theirs, setTheirs, activeMine, setActiveMine, activeFoe, setActiveFoe, weather, setWeather, terrain, setTerrain, trickRoom, setTrickRoom, tw, setTw, screens, setScreens, editingFoe, setEditingFoe, mineSlots, state, slotsN, myMons, foeMons, rawActive, foesAlive, advice, foeAdvice, plan, myReplace, foeReplace, alive, order } = useAssistantController(team, format);
+  const { foeSetFor, damage, singles, N, onField, mineIdx, setMineIdx, mine, setMine, theirs, setTheirs, actives, toggleActive, weather, setWeather, terrain, setTerrain, trickRoom, setTrickRoom, tw, setTw, screens, setScreens, editingFoe, setEditingFoe, mineSlots, state, slotsN, myMons, foeMons, rawActive, foesAlive, advice, foeAdvice, plan, brief, myReplace, foeReplace, alive, order } = useAssistantController(team, format);
   if (team.length === 0) {
     return <div className="empty-state">Primero arma tu equipo de {FORMAT_ES[format]} en <b>Mi equipo</b> o <b>Mi colección</b> para usar el asistente.</div>;
   }
@@ -29,18 +30,16 @@ export function Assistant({ team, format }: { team: PokemonSet[]; format: Format
       if (side === 0) setMine(mine.map((x, j) => (j === i ? { ...x, ...patch } : x)));
       else setTheirs(theirs.map((x, j) => (j === i ? { ...x, ...patch } : x)));
     };
-    const isActive = !singles || (side === 0 ? activeMine : activeFoe) === i;
+    const isActive = actives[side].includes(i);
     const species = sl.set?.species;
     const valid = !!species && !!getSpecies(species);
     const fainted = valid && sl.hp <= 0;
     return (
-      <div className={`slot${singles ? (isActive ? ' active-slot' : ' bench-slot') : ''}${fainted ? ' fainted-slot' : ''}`} key={`${side}-${i}`}>
-        {singles && (
-          <label className="active-pick">
-            <input type="radio" name={`active-${side}`} checked={isActive} onChange={() => (side === 0 ? setActiveMine(i) : setActiveFoe(i))} />
-            {isActive ? '⚔️ En combate' : 'Reserva'}{fainted && ' · 💀 debilitado'}
-          </label>
-        )}
+      <div className={`slot${isActive ? ' active-slot' : ' bench-slot'}${fainted ? ' fainted-slot' : ''}`} key={`${side}-${i}`}>
+        <label className="active-pick" title={singles ? 'El que está en combate' : 'Marca los 2 que están en combate'}>
+          <input type={singles ? 'radio' : 'checkbox'} name={`active-${side}`} checked={isActive} onChange={() => toggleActive(side as 0 | 1, i)} />
+          {isActive ? '⚔️ En combate' : 'Reserva'}{fainted && ' · 💀 debilitado'}
+        </label>
         <div className="slot-head">
           {valid ? <Sprite species={species!} size={isActive ? 56 : 40} /> : <div className="sprite-fallback" style={{ width: 48, height: 48 }}>—</div>}
           <div className="slot-pick">
@@ -112,21 +111,24 @@ export function Assistant({ team, format }: { team: PokemonSet[]; format: Format
           <p className="muted">
             {singles
               ? 'Individuales: elige los 3 Pokémon que llevas y los 3 del rival, y marca cuál está en combate. Te digo si atacar o cambiar, con el daño exacto de Champions.'
-              : 'Dobles: configura tus 2 Pokémon en combate y los 2 rivales. Te digo qué hacer este turno, con el daño exacto de Champions.'}
+              : 'Dobles: cada uno lleva 4 de sus 6 Pokémon. Marca los 2 que están en combate de cada lado (los otros 2 quedan en reserva para cambiar). Te digo qué ataque usar con cada uno y contra quién, con el daño exacto de Champions.'}
           </p>
         </div>
       </div>
 
-      <div className="field-grid">
+      <div className={singles ? 'field-grid' : 'field-grid doubles-field'}>
         <div className="side-box mine">
-          <h3>{singles ? 'Tus 3 Pokémon' : 'Tus Pokémon'} <span className="muted small">· te quedan {alive(0)}</span></h3>
-          <div className={singles ? 'slots slots-3' : 'slots'}>{sideIdx.map((i) => slotEditor(0, i))}</div>
+          <h3>{singles ? 'Tus 3 Pokémon' : 'Tus 4 Pokémon'} <span className="muted small">· te quedan {alive(0)}{!singles && ` · en combate ${actives[0].length}/${onField}`}</span></h3>
+          <div className={singles ? 'slots slots-3' : 'slots slots-4'}>{sideIdx.map((i) => slotEditor(0, i))}</div>
         </div>
         <div className="side-box foe">
-          <h3>{singles ? 'Los 3 del rival' : 'Rivales'} <span className="muted small">· le quedan {alive(1)}</span></h3>
-          <div className={singles ? 'slots slots-3' : 'slots'}>{sideIdx.map((i) => slotEditor(1, i))}</div>
+          <h3>{singles ? 'Los 3 del rival' : 'Los 4 del rival'} <span className="muted small">· le quedan {alive(1)}{!singles && ` · en combate ${actives[1].length}/${onField}`}</span></h3>
+          <div className={singles ? 'slots slots-3' : 'slots slots-4'}>{sideIdx.map((i) => slotEditor(1, i))}</div>
         </div>
       </div>
+      {!singles && (actives[0].length < 2 || actives[1].length < 2) && (
+        <p className="notice small">Marca <b>2 Pokémon «En combate»</b> en cada lado (salvo que a alguien solo le quede uno).</p>
+      )}
 
       <div className="panel field-controls">
         <label>Clima
@@ -162,11 +164,21 @@ export function Assistant({ team, format }: { team: PokemonSet[]; format: Format
         )}
         {plan && (
           <div className="plan-line">
-            🔮 <b>Mirando un turno adelante:</b> {plan.labels.filter(Boolean).join(' + ')}
+            🔮 <b>Jugada recomendada {singles ? '' : 'para los dos'} (mirando un turno adelante)</b>
             <span className={plan.value >= plan.now ? 'up' : 'down'}> · ventaja {Math.round(plan.now)} → {Math.round(plan.value)}</span>
+            <div className="plan-actions">
+              {plan.actions.map((a, i) => myMons[i] && a && (
+                <div key={i} className="plan-action">
+                  <Sprite species={myMons[i]!.species} size={36} />
+                  <b>{speciesEs(myMons[i]!.species)}</b>
+                  <span>→ {plan.labels[i]}{a.type === 'move' && a.mega ? ' + Megaevolucionar' : ''}</span>
+                </div>
+              ))}
+            </div>
             <div className="muted small">Simula el turno contra la mejor respuesta del rival y valora cómo quedaríais (PS, Pokémon vivos, mejoras y estados).</div>
           </div>
         )}
+        {brief && <DoublesBriefView brief={brief} />}
         <div className={singles ? 'advice-grid single' : 'advice-grid'}>
           {slotsN.map((slot) => {
             const raw = rawActive(0, slot);
@@ -290,6 +302,109 @@ function DamageTable({ state, damage, attackers, defenders, title }: { state: Ba
           </table>
         </div>
       ))}
+    </div>
+  );
+}
+
+const koTag = (h: { ko: 'sure' | 'chance' | null; koChance?: number }) =>
+  h.ko === 'sure' ? <span className="ko-tag sure">KO seguro</span>
+    : h.ko === 'chance' ? <span className="ko-tag chance">{h.koChance != null ? `${Math.round(h.koChance * 100)}% KO` : 'KO posible'}</span> : null;
+
+function HitCell({ h }: { h: Hit }) {
+  return (
+    <div className="hit-cell">
+      <div className="hit-move"><TypeBadge type={getMove(h.move)?.type ?? 'Normal'} small /> {moveLabel(h.move)}{h.spread && <span className="muted small"> (área)</span>}</div>
+      <DamageBar min={h.minPct} max={h.maxPct} />
+      <div className="hit-tags small">
+        {koTag(h)}
+        <span className={h.faster ? 'up' : 'muted'}>{h.faster ? '⚡ atacas antes' : '🐢 el rival es más rápido'}</span>
+        {h.charge && <span className="down">⏳ tarda 2 turnos (necesita {h.move.startsWith('Electro') ? 'lluvia' : h.move.startsWith('Solar') ? 'sol' : 'un turno de carga'})</span>}
+      </div>
+    </div>
+  );
+}
+
+/** Dobles: qué ataque usar con cada uno contra cada rival, KOs entre los dos y quién está en peligro. */
+function DoublesBriefView({ brief }: { brief: DoublesBrief }) {
+  const foes = brief.attacks[0]?.vs.map((h) => h.target) ?? [];
+  return (
+    <div className="brief">
+      <h4>🎯 Mejor ataque de cada uno contra cada rival</h4>
+      <div className="table-scroll">
+        <table className="brief-table">
+          <thead>
+            <tr><th>Tu Pokémon</th>{foes.map((f) => <th key={f.uid}><Sprite species={f.species} size={32} /> vs {speciesEs(f.species)} <span className="muted small">({Math.round((f.hp / f.maxHP) * 100)}% PS)</span></th>)}</tr>
+          </thead>
+          <tbody>
+            {brief.attacks.map(({ mon, vs }) => (
+              <tr key={mon.uid}>
+                <td className="left"><Sprite species={mon.species} size={36} /> <b>{speciesEs(mon.species)}</b></td>
+                {foes.map((f) => {
+                  const h = vs.find((x) => x.target.uid === f.uid);
+                  return <td key={f.uid}>{h ? <HitCell h={h} /> : <span className="muted small">sin daño</span>}</td>;
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {brief.attacks.some((a) => a.spread.length > 0) && (
+        <div className="brief-spread small">
+          <b>Ataques en área</b> (golpean a los dos rivales con un 25 % menos de daño):
+          {brief.attacks.filter((a) => a.spread.length).map(({ mon, spread }) => {
+            const byMove = [...new Set(spread.map((h) => h.move))];
+            return byMove.map((mv) => (
+              <div key={mon.uid + mv}>
+                {speciesEs(mon.species)} · <b>{moveLabel(mv)}</b>: {spread.filter((h) => h.move === mv).map((h) => `${speciesEs(h.target.species)} ${h.minPct}–${h.maxPct}%${h.ko === 'sure' ? ' (KO)' : h.ko ? ' (puede KO)' : ''}`).join(' · ')}
+              </div>
+            ));
+          })}
+        </div>
+      )}
+
+      {brief.focus.length > 0 && (
+        <>
+          <h4>🤝 Si los dos atacáis al mismo rival</h4>
+          <div className="focus-list">
+            {brief.focus.map((f) => (
+              <div key={f.target.uid} className={`focus-row${f.ko === 'sure' ? ' sure' : f.ko ? ' chance' : ''}`}>
+                <Sprite species={f.target.species} size={32} />
+                <div>
+                  <b>{speciesEs(f.target.species)}</b> <span className="muted small">({Math.round(f.hpPct)}% PS)</span>: {' '}
+                  {f.parts.map((h) => `${speciesEs(h.attacker.species)} con ${moveLabel(h.move)} (${h.minPct}–${h.maxPct}%)`).join(' + ')}
+                  {' = '}<b>{Math.round(f.minPct)}–{Math.round(f.maxPct)}%</b> {koTag(f) ?? <span className="muted small">no cae</span>}
+                  {f.ko && f.parts.some((h) => h.ko === 'sure') && <span className="muted small"> · con uno solo ya basta: el otro puede atacar al otro rival</span>}
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      <h4>⚠️ Lo que te pueden hacer</h4>
+      <div className="danger-list">
+        {brief.danger.map(({ mon, from, total }) => {
+          const left = (mon.hp / mon.maxHP) * 100;
+          const both = total >= left;
+          return (
+            <div key={mon.uid} className={`danger-row${from.some((h) => h.ko === 'sure') ? ' high' : both ? ' mid' : ''}`}>
+              <Sprite species={mon.species} size={32} />
+              <div>
+                <b>{speciesEs(mon.species)}</b> <span className="muted small">({Math.round(left)}% PS)</span>
+                {from.map((h) => (
+                  <div key={h.attacker.uid} className="small">
+                    {speciesEs(h.attacker.species)} con {moveLabel(h.move)}: {h.minPct}–{h.maxPct}% {koTag(h)} {h.faster && <span className="down">⚡ es más rápido</span>}
+                  </div>
+                ))}
+                {from.some((h) => h.ko === 'sure')
+                  ? <div className="small down">→ Corre peligro: Protección, cambiarlo o golpear antes a quien lo amenaza.</div>
+                  : both ? <div className="small down">→ Si lo atacan los dos, cae: considera Protección.</div> : null}
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

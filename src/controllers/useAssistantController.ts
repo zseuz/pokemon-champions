@@ -7,6 +7,7 @@ import { computeDamage, monAt, type BattleMon, type BattleState, type Terrain, t
 import { getSpecies } from '../models/domain/dex';
 import { defaultSet, type PokemonSet } from '../models/domain/sets';
 import { battleMonFor, neutralState } from '../models/analysis/teamAnalysis';
+import { doublesBrief } from '../models/analysis/doublesBrief';
 
 export type Status = '' | 'brn' | 'par' | 'psn' | 'tox' | 'slp';
 export interface SlotState {
@@ -21,17 +22,29 @@ export const newSlot = (set: PokemonSet | null): SlotState => ({
   set, hp: 100, status: '', mega: false, fresh: true, boosts: { atk: 0, def: 0, spa: 0, spd: 0, spe: 0 },
 });
 
+/**
+ * Individuales: cada uno lleva 3 Pokémon y hay 1 en combate por lado.
+ * Dobles: cada uno lleva 4 de sus 6 y hay 2 en combate por lado (los otros 2 en reserva).
+ */
 export function useAssistantController(team: PokemonSet[], format: Format) {
   const singles = format === 'singles';
-  const N = singles ? 3 : 2;
+  const N = singles ? 3 : 4;
+  /** Pokémon en combate por lado */
+  const onField = singles ? 1 : 2;
   const [mineIdx, setMineIdx] = useState<number[]>(() => Array.from({ length: N }, (_, i) => (i < team.length ? i : -1)));
   const [mine, setMine] = useState<SlotState[]>(() => Array.from({ length: N }, () => newSlot(null)));
   const [theirs, setTheirs] = useState<SlotState[]>(() => {
     const foes = metaFor(format).filter((m) => m.set && !team.some((t) => t.species === m.species));
     return Array.from({ length: N }, (_, i) => newSlot(foes[i] ? structuredClone(foes[i].set!) : null));
   });
-  const [activeMine, setActiveMine] = useState(0);
-  const [activeFoe, setActiveFoe] = useState(0);
+  // posiciones (de los N que llevas) que están en combate
+  const [actives, setActives] = useState<[number[], number[]]>(() => singles ? [[0], [0]] : [[0, 1], [0, 1]]);
+  /** Marca/desmarca un Pokémon como en combate (en dobles, como mucho 2: si ya hay 2, sale el primero). */
+  const toggleActive = (side: 0 | 1, i: number) => setActives((prev) => {
+    const cur = prev[side];
+    const next = singles ? [i] : cur.includes(i) ? cur.filter((x) => x !== i) : [...cur, i].slice(-onField);
+    return (side === 0 ? [next, prev[1]] : [prev[0], next]) as [number[], number[]];
+  });
   const [weather, setWeather] = useState<'' | Weather>('');
   const [terrain, setTerrain] = useState<'' | Terrain>('');
   const [trickRoom, setTrickRoom] = useState(false);
@@ -72,16 +85,13 @@ export function useAssistantController(team: PokemonSet[], format: Format) {
       s.team = [...teamMons, ...extraBench.map((b) => battleMonFor(b, side, false))];
       s.active = actives.map((i) => pos.get(i) ?? null);
     };
-    if (singles) {
-      build(mineSlots, 0, [activeMine], []);
-      build(theirs, 1, [activeFoe], []);
-    } else {
-      build(mineSlots, 0, [0, 1], team.filter((_, i) => !mineIdx.includes(i)));
-      build(theirs, 1, [0, 1], []);
-    }
+    build(mineSlots, 0, actives[0], []);
+    build(theirs, 1, actives[1], []);
+    // en dobles siempre hay 2 posiciones, aunque una esté vacía
+    for (const s of st.sides) while (s.active.length < onField) s.active.push(null);
     return st;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(mineSlots), JSON.stringify(theirs), weather, terrain, trickRoom, tw, screens, team, mineIdx, activeMine, activeFoe, format]);
+  }, [JSON.stringify(mineSlots), JSON.stringify(theirs), weather, terrain, trickRoom, tw, screens, team, mineIdx, JSON.stringify(actives), format]);
 
   const slotsN = singles ? [0] : [0, 1];
   const myMons = slotsN.map((slot) => monAt(state, { side: 0, slot }));
@@ -96,6 +106,8 @@ export function useAssistantController(team: PokemonSet[], format: Format) {
   const foeAdvice = useMemo(() => foeMons.map((m) => (m && myMons.some(Boolean) ? evaluateOptions(state, m).slice(0, singles ? 3 : 2) : [])), [state]); // eslint-disable-line react-hooks/exhaustive-deps
   /** jugada conjunta recomendada mirando un turno adelante (simula la mejor respuesta del rival) */
   const plan = useMemo(() => (myMons.some(Boolean) && foesAlive ? bestPlan(state, 0) : null), [state]); // eslint-disable-line react-hooks/exhaustive-deps
+  /** Dobles: mejor ataque de cada uno contra cada rival, KOs entre los dos y peligros */
+  const brief = useMemo(() => (!singles && myMons.some(Boolean) && foesAlive ? doublesBrief(state, 0) : null), [state]); // eslint-disable-line react-hooks/exhaustive-deps
   const myReplace = useMemo(() => rankSwitchIns(state, 0).slice(0, 3), [state]);
   const foeReplace = useMemo(() => rankSwitchIns(state, 1).slice(0, 3), [state]);
   const alive = (side: 0 | 1) => state.sides[side].team.filter((m) => !m.fainted).length;
@@ -106,5 +118,5 @@ export function useAssistantController(team: PokemonSet[], format: Format) {
   /** Daño de un ataque (para las tablas de la vista). */
   const damage = (a: BattleMon, d: BattleMon, move: string, spread: boolean) => computeDamage(state, a, d, move, { spread });
 
-  return { foeSetFor, damage, singles, N, mineIdx, setMineIdx, mine, setMine, theirs, setTheirs, activeMine, setActiveMine, activeFoe, setActiveFoe, weather, setWeather, terrain, setTerrain, trickRoom, setTrickRoom, tw, setTw, screens, setScreens, editingFoe, setEditingFoe, mineSlots, state, slotsN, myMons, foeMons, rawActive, foesAlive, advice, foeAdvice, plan, myReplace, foeReplace, alive, order };
+  return { foeSetFor, damage, singles, N, onField, mineIdx, setMineIdx, mine, setMine, theirs, setTheirs, actives, toggleActive, weather, setWeather, terrain, setTerrain, trickRoom, setTrickRoom, tw, setTw, screens, setScreens, editingFoe, setEditingFoe, mineSlots, state, slotsN, myMons, foeMons, rawActive, foesAlive, advice, foeAdvice, plan, brief, myReplace, foeReplace, alive, order };
 }

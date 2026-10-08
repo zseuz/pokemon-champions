@@ -647,3 +647,26 @@ kbd { border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; font-si
 .own-item-note { color: #f5c97a; }
 .team-switcher .team-tabs { flex: 1 1 100%; order: 2; }
 .team-switcher-actions { margin-left: auto; }
+
+/* ── Asistente de dobles: 4 por lado, uno encima del otro ── */
+.field-grid.doubles-field { grid-template-columns: 1fr; }
+.slots.slots-4 { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+.slot { min-width: 0; }
+.slots-4 .bench-slot .boosts { display: none; }
+.plan-actions { display: flex; flex-wrap: wrap; gap: 8px 18px; margin: 6px 0; }
+.plan-action { display: flex; align-items: center; gap: 6px; }
+.brief h4 { margin: 14px 0 6px; }
+.brief-table { width: 100%; }
+.brief-table td, .brief-table th { vertical-align: top; text-align: left; }
+.hit-cell { display: flex; flex-direction: column; gap: 3px; min-width: 170px; }
+.hit-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.hit-tags .up, .danger-row .down, .brief .down { color: #ff9a9a; }
+.hit-tags .up { color: #8bf0a5; }
+.ko-tag { font-size: .72rem; font-weight: 700; padding: 0 6px; border-radius: 999px; }
+.ko-tag.sure { background: #1d3a2a; color: #8bf0a5; border: 1px solid var(--good); }
+.ko-tag.chance { background: #3a2f12; color: #f5c97a; border: 1px solid #6b5420; }
+.brief-spread { margin-top: 8px; padding: 8px 10px; background: var(--card); border-radius: 8px; }
+.focus-list, .danger-list { display: flex; flex-direction: column; gap: 6px; }
+.focus-row, .danger-row { display: flex; gap: 8px; align-items: flex-start; padding: 6px 10px; border-radius: 8px; background: var(--card); border-left: 4px solid var(--line); }
+.focus-row.sure { border-left-color: var(--good); } .focus-row.chance { border-left-color: #f5c97a; }
+.danger-row.high { border-left-color: var(--bad); } .danger-row.mid { border-left-color: #f5c97a; }
