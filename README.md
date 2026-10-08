@@ -246,7 +246,7 @@ flowchart LR
 | Habilidades y movimientos por especie | [Pokémon Showdown](https://github.com/pkmn/ps) (`@pkmn/dex`) | `gen:abilities`, `gen:learnsets` |
 | Nombres en español | [PokeAPI](https://pokeapi.co/) | `npm run gen:es` |
 
-Al empezar una temporada nueva basta con `npm run gen:meta && npm run validate`. Los nombres que Champions traduce distinto a los juegos anteriores (p. ej. *Acrobacia*, *Golpe Venenoso*) se añaden en `CHAMPIONS_MOVES` de `src/models/domain/es.ts`.
+Al empezar una temporada nueva la cabecera muestra **🆕 ¡Temporada nueva!**: un clic descarga y valida el meta (equivale a `npm run gen:meta && npm run validate`). El botón **🔄 Meta** comprueba manualmente si hay datos nuevos. Los nombres que Champions traduce distinto a los juegos anteriores (p. ej. *Acrobacia*, *Golpe Venenoso*) se añaden en `CHAMPIONS_MOVES` de `src/models/domain/es.ts`.
 
 ---
 

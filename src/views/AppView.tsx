@@ -2,6 +2,7 @@
 import { FORMAT_ES, META_INFOS, type Format } from '../models/data/meta';
 import type { AppController, Tab } from '../controllers/useAppController';
 import { DataLists } from './components/SetEditor';
+import { MetaStatus } from './components/MetaStatus';
 import { Assistant } from './pages/AssistantView';
 import { Collection } from './pages/CollectionView';
 import { Ranking } from './pages/RankingView';
@@ -39,6 +40,7 @@ export function AppView(c: AppController) {
         >
           {dbOk ? '💾 Guardado en BD local' : db === 'error' ? '⚠ Error al guardar' : '⚠ Solo en el navegador'}
         </span>
+        <MetaStatus />
         <div className="seg format-switch" title="Formato del ranking, del reclutamiento y del equipo">
           {(['singles', 'doubles'] as Format[]).map((f) => (
             <button key={f} className={format === f ? 'active' : ''} onClick={() => setFormat(f)}>
