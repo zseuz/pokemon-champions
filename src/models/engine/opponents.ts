@@ -1,13 +1,13 @@
-/** Equipos rivales para el simulador, sacados del meta de dobles. */
-import { metaTop, metaWeight } from '../data/meta';
+/** Equipos rivales para el simulador, sacados del meta del formato. */
+import { metaTop, metaWeight, type Format } from '../data/meta';
 import { effectiveSpecies, type PokemonSet } from '../domain/sets';
 
-// los 60 más usados de dobles
-const metaSets = metaTop('doubles', 60).filter((m) => m.set);
+// los 60 más usados de cada formato
+const metaSets = (format: Format) => metaTop(format, 60).filter((m) => m.set);
 
 /** Equipo rival aleatorio del meta: ponderado por uso, sin especies ni objetos repetidos y con máx. 1 Mega. */
-export function randomMetaTeam(n = 6): PokemonSet[] {
-  const pool = [...metaSets];
+export function randomMetaTeam(n = 6, format: Format = 'doubles'): PokemonSet[] {
+  const pool = metaSets(format);
   const team: PokemonSet[] = [];
   let hasMega = false;
   while (team.length < n && pool.length) {
@@ -23,7 +23,7 @@ export function randomMetaTeam(n = 6): PokemonSet[] {
   return team;
 }
 
-/** La IA elige 4 de sus 6 (con algo de azar). */
-export function pickFour(team: PokemonSet[]): number[] {
-  return team.map((_, i) => i).sort(() => Math.random() - 0.5).slice(0, 4);
+/** La IA elige 4 de sus 6 en dobles o 3 en individuales (con algo de azar). */
+export function pickFour(team: PokemonSet[], n = 4): number[] {
+  return team.map((_, i) => i).sort(() => Math.random() - 0.5).slice(0, n);
 }

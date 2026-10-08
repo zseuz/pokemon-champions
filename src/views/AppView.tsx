@@ -20,7 +20,6 @@ const TABS: [Tab, string][] = [
   ['sim', '⚔️ Simulador'],
   ['history', '📜 Historial'],
 ];
-const DOUBLES_ONLY: Tab[] = ['sim'];
 
 export function AppView(c: AppController) {
   const { tab, setTab, format, setFormat, db, dbPath, box, setBox, teams, team, setTeam, inventory, setInventory } = c;
@@ -33,7 +32,7 @@ export function AppView(c: AppController) {
           <span className="logo">◓</span>
           <div>
             <h1>Champions Coach</h1>
-            <span className="muted small">{META_INFOS[DOUBLES_ONLY.includes(tab) ? 'doubles' : format].format}</span>
+            <span className="muted small">{META_INFOS[format].format}</span>
           </div>
         </div>
         <span
@@ -57,7 +56,6 @@ export function AppView(c: AppController) {
               {id === 'team' && team.length > 0 && <span className="badge">{team.length}</span>}
               {id === 'collection' && box.length > 0 && <span className="badge">{box.length}</span>}
               {id === 'history' && c.history.length > 0 && <span className="badge">{c.history.length}</span>}
-              {DOUBLES_ONLY.includes(id) && format === 'singles' && <span className="badge alt">Dobles</span>}
             </button>
           ))}
         </nav>
@@ -73,11 +71,8 @@ export function AppView(c: AppController) {
           <Collection format={format} team={team} setTeam={setTeam} box={box} setBox={setBox} inventory={inventory} onGoRecruit={() => setTab('recruit')} backup={c.backup} history={c.history} />
         )}
         {tab === 'team' && <TeamBuilder key={format} format={format} team={team} setTeam={setTeam} onRecruit={c.recruit} />}
-        {DOUBLES_ONLY.includes(tab) && format === 'singles' && (
-          <p className="notice">El simulador funciona en <b>Dobles</b> (VGC): usa tu equipo de dobles.</p>
-        )}
         {tab === 'assistant' && <Assistant key={format} team={teams[format]} format={format} />}
-        {tab === 'sim' && <Simulator team={teams.doubles} onFinish={c.addBattle} />}
+        {tab === 'sim' && <Simulator key={format} team={teams[format]} format={format} onFinish={c.addBattle} />}
         {tab === 'history' && <History format={format} history={c.history} team={team} addBattle={c.addBattle} removeBattle={c.removeBattle} />}
       </main>
       <footer className="muted small">

@@ -124,6 +124,15 @@ export const STATUS_MOVES = {
   helpingHand: ['Helping Hand'],
   taunt: ['Taunt'],
   pivot: ['U-turn', 'Volt Switch', 'Flip Turn', 'Parting Shot', 'Teleport'],
+  /** trampas de entrada en el campo rival */
+  hazards: { 'Stealth Rock': 'stealthRock', Spikes: 'spikes' } as Record<string, 'stealthRock' | 'spikes'>,
+  /** quitan trampas: Giro Rápido/Giro Mortal (las tuyas), Despejar/Limpieza General (todas) */
+  hazardClear: ['Rapid Spin', 'Mortal Spin', 'Defog', 'Tidy Up'],
+  encore: ['Encore'],
+  perish: ['Perish Song'],
+  /** obligan al rival a cambiar: de estado (Rugido) o tras golpear (Cola Dragón) */
+  phaze: ['Roar', 'Whirlwind'],
+  dragOut: ['Dragon Tail', 'Circle Throw'],
 };
 
 export const ALLY_TARGET_MOVES = new Set(['Helping Hand', 'Heal Pulse', 'Coaching', 'Pollen Puff']);
@@ -131,6 +140,7 @@ export const SELF_FIELD_MOVES = new Set([
   ...STATUS_MOVES.protect, ...STATUS_MOVES.wideGuard, ...STATUS_MOVES.redirect, ...STATUS_MOVES.tailwind,
   ...STATUS_MOVES.trickRoom, ...Object.keys(STATUS_MOVES.boostsSelf), ...Object.keys(STATUS_MOVES.heal),
   ...Object.keys(STATUS_MOVES.screens), ...Object.keys(STATUS_MOVES.weather), 'Helping Hand', 'Teleport',
+  ...Object.keys(STATUS_MOVES.hazards), 'Defog', 'Tidy Up', 'Perish Song',
   'Coaching', 'Sunny Day', 'Rain Dance',
 ]);
 

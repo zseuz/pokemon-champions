@@ -40,6 +40,14 @@ export interface BattleMon {
   protectCount: number;
   tauntTurns: number;
   airBalloon: boolean;
+  /** último movimiento usado (para Otra Vez) */
+  lastMove: string;
+  /** Otra Vez: obligado a repetir `move` durante `turns` turnos */
+  encore: { move: string; turns: number } | null;
+  /** contador de Canto Mortal (0 = sin contador) */
+  perish: number;
+  /** set original si se ha transformado (Ditto) */
+  baseSet?: PokemonSet;
 }
 
 export interface SideState {
@@ -53,6 +61,9 @@ export interface SideState {
   auroraVeil: number;
   megaUsed: boolean;
   faintedCount: number;
+  /** trampas en el lado de este equipo */
+  stealthRock: boolean;
+  spikes: number;
 }
 
 export interface LogEntry {
@@ -100,22 +111,25 @@ export function createMon(set: PokemonSet, side: SideIdx): BattleMon {
     lostItem: false, types, stats, maxHP, hp: maxHP, status: '', sleepTurns: 0, toxicCounter: 0,
     boosts: { atk: 0, def: 0, spa: 0, spd: 0, spe: 0, hp: 0, accuracy: 0, evasion: 0 },
     isMega: false, fainted: false, turnsOnField: 0, protectCount: 0, tauntTurns: 0,
-    airBalloon: set.item === 'Air Balloon',
+    airBalloon: set.item === 'Air Balloon', lastMove: '', encore: null, perish: 0,
   };
 }
 
-function createSide(name: string, sets: PokemonSet[], side: SideIdx): SideState {
+function createSide(name: string, sets: PokemonSet[], side: SideIdx, slots: number): SideState {
   const team = sets.map((s) => createMon(s, side));
   return {
-    name, team, active: [team[0] ? 0 : null, team[1] ? 1 : null], tailwind: 0, reflect: 0,
-    lightScreen: 0, auroraVeil: 0, megaUsed: false, faintedCount: 0,
+    name, team, active: slots === 1 ? [team[0] ? 0 : null] : [team[0] ? 0 : null, team[1] ? 1 : null], tailwind: 0, reflect: 0,
+    lightScreen: 0, auroraVeil: 0, megaUsed: false, faintedCount: 0, stealthRock: false, spikes: 0,
   };
 }
 
-export function createBattle(p1: PokemonSet[], p2: PokemonSet[], names: [string, string] = ['Tú', 'Rival']): BattleState {
+export function createBattle(
+  p1: PokemonSet[], p2: PokemonSet[], names: [string, string] = ['Tú', 'Rival'], format: 'singles' | 'doubles' = 'doubles',
+): BattleState {
+  const slots = format === 'singles' ? 1 : 2;
   const state: BattleState = {
-    sides: [createSide(names[0], p1, 0), createSide(names[1], p2, 1)],
-    turn: 0, trickRoom: 0, log: [], winner: null, phase: 'choose',
+    sides: [createSide(names[0], p1, 0, slots), createSide(names[1], p2, 1, slots)],
+    turn: 0, trickRoom: 0, log: [], winner: null, phase: 'choose', format,
   };
   log(state, 'info', `¡Comienza el combate! ${names[0]} vs ${names[1]}`);
   const entering = activeMons(state);
@@ -213,7 +227,7 @@ export function moveTargetKind(moveName: string): 'foe' | 'spread' | 'all' | 'al
   if (mv?.target === 'allAdjacent') return 'all';
   if (SELF_FIELD_MOVES.has(moveName)) return 'self';
   if (isStatusMove(moveName) && !(moveName in STATUS_MOVES.statusTarget) && !(moveName in STATUS_MOVES.boostsTarget) &&
-      !STATUS_MOVES.taunt.includes(moveName) && moveName !== 'Encore') return 'self';
+      !STATUS_MOVES.taunt.includes(moveName) && moveName !== 'Encore' && moveName !== 'Transform' && !STATUS_MOVES.phaze.includes(moveName)) return 'self';
   return 'foe';
 }
 
@@ -343,6 +357,11 @@ function onEntry(state: BattleState, m: BattleMon) {
       applyBoosts(state, foe, { atk: -1 }, m);
       if (foe.ability === 'Rattled') applyBoosts(state, foe, { spe: 1 }, foe);
     }
+  }
+  if (a === 'Imposter') {
+    const slot = slotOf(state, m);
+    const t = monAt(state, { side: (1 - m.side) as SideIdx, slot }) ?? foesOf(state, m)[0];
+    if (t) transform(state, m, t);
   }
   if (WEATHER_ABIL[a]) setWeather(state, WEATHER_ABIL[a], m);
   if (TERRAIN_ABIL[a]) setTerrain(state, TERRAIN_ABIL[a], m);
@@ -476,6 +495,10 @@ function switchIn(state: BattleState, side: SideIdx, slot: number, teamIdx: numb
     const out = s.team[outIdx];
     out.boosts = { atk: 0, def: 0, spa: 0, spd: 0, spe: 0, hp: 0, accuracy: 0, evasion: 0 };
     out.tauntTurns = 0;
+    out.encore = null;
+    out.perish = 0;
+    out.lastMove = '';
+    if (out.baseSet) untransform(out);
     if (out.status === 'tox') out.toxicCounter = 0;
     if (!out.fainted) {
       if (out.ability === 'Regenerator') out.hp = Math.min(out.maxHP, out.hp + Math.floor(out.maxHP / 3));
@@ -485,7 +508,56 @@ function switchIn(state: BattleState, side: SideIdx, slot: number, teamIdx: numb
   s.active[slot] = teamIdx;
   const m = s.team[teamIdx];
   log(state, 'switch', `${side === 1 ? 'El rival saca' : 'Sacas'} a ${m.species}.`, side);
-  if (runEntry) onEntry(state, m);
+  entryHazards(state, m);
+  if (runEntry && !m.fainted) onEntry(state, m);
+}
+
+/** Transformación / Impostor: copia especie, tipos, stats (salvo PS), habilidad, movimientos y cambios de stats. */
+function transform(state: BattleState, m: BattleMon, t: BattleMon) {
+  if (m.baseSet || t.baseSet) { log(state, 'info', '¡Pero falló!'); return; }
+  m.baseSet = m.set;
+  m.species = t.species;
+  m.types = [...t.types];
+  m.stats = { ...t.stats, hp: m.stats.hp };
+  m.ability = t.ability;
+  m.boosts = { ...t.boosts };
+  m.set = { ...m.set, moves: [...t.set.moves], nature: t.set.nature, sp: { ...t.set.sp, hp: m.set.sp.hp }, ability: t.ability };
+  log(state, 'info', `¡${m.side === 1 ? 'Ditto rival' : 'Ditto'} se transforma en ${t.species}!`, m.side);
+}
+
+function untransform(m: BattleMon) {
+  const base = m.baseSet!;
+  const { stats, types } = computeStats(base, base.species, base.ability);
+  Object.assign(m, { set: base, species: base.species, ability: base.ability, types, stats, baseSet: undefined });
+}
+
+const SPIKES_DMG = [0, 1 / 8, 1 / 6, 1 / 4];
+
+/** Daño de Trampa Rocas y Púas al entrar (Botas Gruesas y Muro Mágico lo evitan). */
+function entryHazards(state: BattleState, m: BattleMon) {
+  const s = state.sides[m.side];
+  if (m.item === 'Heavy-Duty Boots' || m.ability === 'Magic Guard') return;
+  if (s.stealthRock) damage(state, m, Math.floor((m.maxHP * effectiveness('Rock', m.types)) / 8), 'por Trampa Rocas');
+  if (s.spikes && isGrounded(m)) damage(state, m, Math.floor(m.maxHP * SPIKES_DMG[s.spikes]), 'por las Púas');
+}
+
+/** Rugido, Remolino, Cola Dragón…: saca a un Pokémon al azar del banquillo del objetivo. */
+function forceSwitch(state: BattleState, t: BattleMon): boolean {
+  const bench = benchOf(state, t.side);
+  const slot = slotOf(state, t);
+  if (!bench.length || slot < 0 || t.fainted) return false;
+  if (t.ability === 'Guard Dog' || t.ability === 'Suction Cups') { log(state, 'info', `${name(t)} se aferra al suelo.`, t.side); return false; }
+  log(state, 'info', `¡${name(t)} es expulsado del combate!`, t.side);
+  switchIn(state, t.side, slot, bench[Math.floor(Math.random() * bench.length)]);
+  return true;
+}
+
+function clearHazards(state: BattleState, side: SideIdx, by: BattleMon) {
+  const s = state.sides[side];
+  if (!s.stealthRock && !s.spikes) return;
+  s.stealthRock = false;
+  s.spikes = 0;
+  log(state, 'info', `${name(by)} elimina las trampas del lado de ${side === 0 ? 'tu equipo' : 'el rival'}.`, by.side);
 }
 
 /** Elige el mejor reemplazo del banquillo: el que menos sufre los tipos de los rivales activos. */
@@ -609,7 +681,9 @@ function effectiveMoveType(state: BattleState, user: BattleMon, moveName: string
   return t;
 }
 
-function executeMove(state: BattleState, user: BattleMon, action: Extract<Action, { type: 'move' }>, f: TurnFlags) {
+function executeMove(state: BattleState, user: BattleMon, chosen: Extract<Action, { type: 'move' }>, f: TurnFlags) {
+  // Otra Vez: solo puede repetir el movimiento bloqueado
+  const action = user.encore && user.encore.move !== chosen.move ? { ...chosen, move: user.encore.move } : chosen;
   const moveName = action.move;
   const mv = getMove(moveName);
   const side = state.sides[user.side];
@@ -635,6 +709,7 @@ function executeMove(state: BattleState, user: BattleMon, action: Extract<Action
   }
 
   log(state, 'move', `${name(user)} usa ${moveLabel(moveName)}.`, user.side);
+  user.lastMove = moveName;
   if (!STATUS_MOVES.protect.includes(moveName)) user.protectCount = 0;
 
   if (FIRST_TURN_ONLY.has(moveName) && user.turnsOnField > 0) {
@@ -680,6 +755,37 @@ function executeMove(state: BattleState, user: BattleMon, action: Extract<Action
     if (key === 'auroraVeil' && state.weather?.type !== 'Snow') { log(state, 'info', '¡Pero falló! (necesita nieve)'); return; }
     side[key] = user.item === 'Light Clay' ? 8 : 5;
     log(state, 'info', `${moveName} protege al equipo de ${name(user)}.`, user.side);
+    return;
+  }
+  if (moveName in STATUS_MOVES.hazards) {
+    const foe = state.sides[1 - user.side];
+    const who = user.side === 0 ? 'del rival' : 'de tu equipo';
+    if (moveName === 'Stealth Rock') {
+      if (foe.stealthRock) { log(state, 'info', '¡Pero falló!'); return; }
+      foe.stealthRock = true;
+      log(state, 'info', `¡Hay piedras puntiagudas flotando alrededor ${who}!`, user.side);
+    } else {
+      if (foe.spikes >= 3) { log(state, 'info', '¡Pero falló!'); return; }
+      foe.spikes++;
+      log(state, 'info', `¡Hay púas en el suelo ${who}! (${foe.spikes} capa${foe.spikes > 1 ? 's' : ''})`, user.side);
+    }
+    return;
+  }
+  if (moveName === 'Defog' || moveName === 'Tidy Up') {
+    clearHazards(state, 0, user);
+    clearHazards(state, 1, user);
+    if (moveName === 'Defog') {
+      const foe = state.sides[1 - user.side];
+      foe.reflect = foe.lightScreen = foe.auroraVeil = 0;
+    } else applyBoosts(state, user, { atk: 1, spe: 1 }, user);
+    return;
+  }
+  if (STATUS_MOVES.perish.includes(moveName)) {
+    for (const m of activeMons(state)) {
+      if (m.perish || m.ability === 'Soundproof') continue;
+      m.perish = 4;
+    }
+    log(state, 'info', '¡Todos los Pokémon que oyen la canción se debilitarán en 3 turnos!');
     return;
   }
   if (moveName in STATUS_MOVES.weather) { setWeather(state, STATUS_MOVES.weather[moveName] as Weather, user); return; }
@@ -827,6 +933,14 @@ function executeMove(state: BattleState, user: BattleMon, action: Extract<Action
   if (sec?.self && sec.chance >= 100 && !user.fainted) applyBoosts(state, user, sec.self, user);
   else if (sec?.self && Math.random() * 100 < sec.chance && !user.fainted) applyBoosts(state, user, sec.self, user);
 
+  // Giro Rápido / Giro Mortal: quitan tus trampas y suben Velocidad
+  if ((moveName === 'Rapid Spin' || moveName === 'Mortal Spin') && !user.fainted) {
+    clearHazards(state, user.side, user);
+    if (moveName === 'Rapid Spin') applyBoosts(state, user, { spe: 1 }, user);
+  }
+  // Cola Dragón / Llave Giro: expulsan al objetivo
+  if (STATUS_MOVES.dragOut.includes(moveName) && totalDealt > 0 && targets[0] && !targets[0].fainted) forceSwitch(state, targets[0]);
+
   // Pivotes (U-turn, Parting Shot…)
   if (STATUS_MOVES.pivot.includes(moveName) && !user.fainted) {
     const to = bestSwitchIn(state, user.side);
@@ -865,6 +979,18 @@ function applyStatusMove(state: BattleState, user: BattleMon, t: BattleMon, move
     const atk = Math.floor(t.stats.atk * boostMult(t.boosts.atk));
     applyBoosts(state, t, { atk: -1 }, user);
     heal(state, user, atk, 'con Absorbefuerza');
+    return;
+  }
+  if (STATUS_MOVES.phaze.includes(moveName)) {
+    if (moveName === 'Roar' && t.ability === 'Soundproof') { log(state, 'info', `No afecta a ${name(t)}.`, t.side); return; }
+    if (!forceSwitch(state, t)) log(state, 'info', '¡Pero falló!');
+    return;
+  }
+  if (moveName === 'Transform') { transform(state, user, t); return; }
+  if (STATUS_MOVES.encore.includes(moveName)) {
+    if (!t.lastMove || t.encore || t.lastMove === 'Encore') { log(state, 'info', '¡Pero falló!'); return; }
+    t.encore = { move: t.lastMove, turns: 3 };
+    log(state, 'info', `¡${name(t)} tiene que repetir ${moveLabel(t.lastMove)} (Otra Vez)!`, t.side);
     return;
   }
   if (STATUS_MOVES.taunt.includes(moveName)) {
@@ -925,7 +1051,14 @@ function endOfTurn(state: BattleState, f: TurnFlags) {
       if (m.status === 'tox') { m.toxicCounter++; damage(state, m, Math.floor((m.maxHP * m.toxicCounter) / 16), 'por el veneno'); }
     }
     if (m.tauntTurns > 0) m.tauntTurns--;
+    if (m.encore && --m.encore.turns <= 0) { m.encore = null; log(state, 'info', `${name(m)} ya no está bajo los efectos de Otra Vez.`, m.side); }
     m.turnsOnField++;
+  }
+  for (const m of mons) {
+    if (m.fainted || !m.perish) continue;
+    m.perish--;
+    log(state, 'info', `Contador de Canto Mortal de ${name(m)}: ${m.perish}.`, m.side);
+    if (m.perish === 0) damage(state, m, m.hp, 'por Canto Mortal');
   }
   // Contadores de campo
   if (state.weather && --state.weather.turns <= 0) { log(state, 'info', `Termina la ${WEATHER_ES[state.weather.type]}.`); state.weather = undefined; }
@@ -949,14 +1082,23 @@ function endOfTurn(state: BattleState, f: TurnFlags) {
   // Reemplazos: el rival los hace automáticamente; el jugador elige
   for (const side of [1, 0] as SideIdx[]) {
     const s = state.sides[side];
-    for (let slot = 0; slot < 2; slot++) {
-      const idx = s.active[slot];
-      if (idx == null || !s.team[idx].fainted) continue;
-      if (!benchOf(state, side).length) { s.active[slot] = null; continue; }
-      if (side === 1) {
+    for (let slot = 0; slot < s.active.length; slot++) {
+      // bucle: el que entra puede caer por las trampas
+      for (let guard = 0; guard < 6; guard++) {
+        const idx = s.active[slot];
+        if (idx == null || !s.team[idx].fainted) break;
+        if (!benchOf(state, side).length) { s.active[slot] = null; break; }
+        if (side !== 1) break;
         const to = bestSwitchIn(state, 1);
-        if (to != null) switchIn(state, 1, slot, to);
+        if (to == null) break;
+        switchIn(state, 1, slot, to);
       }
+    }
+    if (sideDefeated(state, side)) {
+      state.winner = side === 1 ? 0 : 1;
+      state.phase = 'end';
+      log(state, 'end', state.winner === 0 ? '¡Has ganado el combate!' : 'Has perdido el combate.');
+      return;
     }
   }
   if (needsReplacement(state).length) {
@@ -979,7 +1121,7 @@ export function sideDefeated(state: BattleState, side: SideIdx) {
 /** Posiciones del jugador con un Pokémon debilitado que deben sustituirse. */
 export function needsReplacement(state: BattleState): number[] {
   const s = state.sides[0];
-  return [0, 1].filter((slot) => {
+  return s.active.map((_, slot) => slot).filter((slot) => {
     const idx = s.active[slot];
     return idx != null && s.team[idx].fainted && benchOf(state, 0).length > 0;
   });
@@ -992,7 +1134,13 @@ export function replaceFainted(prev: BattleState, slot: number, teamIdx: number)
   if (!pendingSlots.length) {
     // si ya no quedan suplentes, vaciar posiciones debilitadas
     const s = state.sides[0];
-    for (let i = 0; i < 2; i++) { const idx = s.active[i]; if (idx != null && s.team[idx].fainted) s.active[i] = null; }
+    for (let i = 0; i < s.active.length; i++) { const idx = s.active[i]; if (idx != null && s.team[idx].fainted) s.active[i] = null; }
+    if (sideDefeated(state, 0)) {
+      state.winner = 1;
+      state.phase = 'end';
+      log(state, 'end', 'Has perdido el combate.');
+      return state;
+    }
     nextTurn(state);
   }
   return state;
@@ -1001,6 +1149,7 @@ export function replaceFainted(prev: BattleState, slot: number, teamIdx: number)
 // ───────────────────────── Opciones legales ─────────────────────────
 
 export function legalMoves(m: BattleMon): string[] {
+  if (m.encore) return [m.encore.move];
   return m.set.moves.filter(Boolean);
 }
 

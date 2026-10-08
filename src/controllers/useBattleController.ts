@@ -9,8 +9,9 @@ export function useBattleController(battle: BattleState, setBattle: (b: BattleSt
   const [choices, setChoices] = useState<(Action | null)[]>([null, null]);
   const [hint, setHint] = useState<Option[][] | null>(null);
 
-  const mine = [0, 1].map((slot) => monAt(battle, { side: 0, slot }));
-  const foes = [0, 1].map((slot) => monAt(battle, { side: 1, slot }));
+  // una posición en individuales, dos en dobles
+  const mine = battle.sides[0].active.map((_, slot) => monAt(battle, { side: 0, slot }));
+  const foes = battle.sides[1].active.map((_, slot) => monAt(battle, { side: 1, slot }));
   const ready = battle.phase === 'choose' && mine.every((m, i) => {
     const c = choices[i];
     if (!m) return true;

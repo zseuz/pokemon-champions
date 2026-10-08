@@ -205,8 +205,42 @@ export function evaluateOptions(state: BattleState, user: BattleMon): Option[] {
       }
       continue;
     } else if (['Stealth Rock', 'Spikes', 'Toxic Spikes', 'Sticky Web'].includes(mv)) {
-      score = singles ? (inDanger ? 10 : 30) : 3;
-      reasons.push(singles ? 'desgasta a cada Pokémon que el rival saque después' : 'poco útil en dobles');
+      const foeBench = benchOf(state, (1 - user.side) as SideIdx).length;
+      const already = (mv === 'Stealth Rock' && foeSide.stealthRock) || (mv === 'Spikes' && foeSide.spikes >= 3);
+      if (already) { score = -15; reasons.push('ya está puesta'); }
+      else if (!foeBench) { score = -10; reasons.push('el rival no tiene más Pokémon que sacar'); }
+      else {
+        score = (singles ? (inDanger ? 10 : 30) : 3) + foeBench * 3 - (mv === 'Spikes' ? foeSide.spikes * 6 : 0);
+        reasons.push(singles ? `desgasta a cada Pokémon que el rival saque (le quedan ${foeBench})` : 'poco útil en dobles');
+      }
+    } else if (mv === 'Defog' || mv === 'Tidy Up') {
+      const mine = side.stealthRock || side.spikes > 0;
+      score = mine ? 28 + side.spikes * 4 : -5;
+      reasons.push(mine ? 'quita las trampas de tu lado' : 'no hay trampas que quitar');
+    } else if (STATUS_MOVES.perish.includes(mv)) {
+      const myBench = benchOf(state, user.side).length;
+      const foeBench = benchOf(state, (1 - user.side) as SideIdx).length;
+      if (user.perish) { score = -20; reasons.push('ya hay Canto Mortal en curso'); }
+      else if (!foeBench && myBench) { score = 60; reasons.push('el rival no puede cambiar: caerá en 3 turnos y tú sí puedes cambiar'); }
+      else { score = 4; reasons.push('ambos pueden cambiar para evitarlo'); }
+    } else if (STATUS_MOVES.encore.includes(mv) || STATUS_MOVES.phaze.includes(mv)) {
+      for (const t of legalTargets(state, user, mv).filter((t) => t.side !== user.side)) {
+        const tm = monAt(state, t)!;
+        let s = 0;
+        const r: string[] = [];
+        if (STATUS_MOVES.encore.includes(mv)) {
+          if (!tm.lastMove || tm.encore) { s = -15; r.push('el rival aún no ha usado ningún movimiento'); }
+          else if (isStatusMove(tm.lastMove)) { s = 40; r.push(`lo deja atrapado usando ${moveLabel(tm.lastMove)}`); }
+          else { s = 0; r.push(`le obligaría a repetir un ataque (${moveLabel(tm.lastMove)})`); }
+        } else {
+          const boosted = Object.values(tm.boosts).reduce((a, b) => a + Math.max(0, b), 0);
+          const hazards = (foeSide.stealthRock ? 1 : 0) + foeSide.spikes;
+          if (!benchOf(state, tm.side).length) { s = -20; r.push('el rival no tiene a quién sacar'); }
+          else { s = 8 + boosted * 15 + hazards * 6; r.push(boosted ? 'elimina sus mejoras de stats' : 'saca a un Pokémon al azar'); if (hazards) r.push('le hace pasar por tus trampas'); }
+        }
+        opts.push({ action: { type: 'move', move: mv, target: t, mega }, score: s, label: moveLabel(mv) + targetLabel(state, user, t), reasons: r });
+      }
+      continue;
     } else {
       score = 5;
       reasons.push('efecto de apoyo');
@@ -216,7 +250,8 @@ export function evaluateOptions(state: BattleState, user: BattleMon): Option[] {
 
   // ── Cambios ── (en individuales siempre se valoran: cambiar es la jugada clave)
   const bench = benchOf(state, user.side);
-  if (singles || inDanger || myHp < 35) {
+  const perishing = user.perish > 0 && user.perish <= 2;
+  if (singles || inDanger || myHp < 35 || perishing) {
     for (const i of bench) {
       const b = state.sides[user.side].team[i];
       const incoming = foes.reduce((t, f) => t + bestIncoming(state, f, b).pct, 0);
@@ -227,7 +262,13 @@ export function evaluateOptions(state: BattleState, user: BattleMon): Option[] {
       let score = (threat.total - incoming) / 2 + (resists ? 8 : 0) - (singles ? 14 : 10) + (singles ? Math.min(100, offense) / 5 : 0);
       const reasons = [`recibiría ~${Math.round(incoming)}% en vez de ~${Math.round(threat.total)}%`];
       if (singles) reasons.push(`después le puede hacer hasta ${Math.round(offense)}%`);
-      if (incoming >= benchHp) { score -= 40; reasons.unshift(`⚠ ${b.species} (${Math.round(benchHp)}% PS) caería al entrar`); }
+      // trampas que sufrirá al entrar
+      const hz = b.item === 'Heavy-Duty Boots' || b.ability === 'Magic Guard' ? 0
+        : (side.stealthRock ? 12.5 * effectiveness('Rock', b.types) : 0) +
+          (side.spikes && !b.types.includes('Flying') && b.ability !== 'Levitate' ? [0, 12.5, 16.7, 25][side.spikes] : 0);
+      if (hz) { score -= hz / 2; reasons.push(`pierde ~${Math.round(hz)}% por las trampas`); }
+      if (perishing) { score += 60; reasons.unshift(`⚠ Canto Mortal: ${user.species} caerá ${user.perish === 1 ? 'este turno' : 'pronto'}`); }
+      if (incoming + hz >= benchHp) { score -= 40; reasons.unshift(`⚠ ${b.species} (${Math.round(benchHp)}% PS) caería al entrar`); }
       if (resists) reasons.push('resiste sus ataques');
       opts.push({ action: { type: 'switch', to: i }, score, label: `Cambiar a ${b.species}`, reasons });
     }

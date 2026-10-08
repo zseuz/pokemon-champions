@@ -5,7 +5,7 @@ import { STATUS_MOVES } from '../domain/moveEffects';
 import { effectiveSpecies, type PokemonSet } from '../domain/sets';
 
 function emptySide(name: string): SideState {
-  return { name, team: [], active: [null, null], tailwind: 0, reflect: 0, lightScreen: 0, auroraVeil: 0, megaUsed: false, faintedCount: 0 };
+  return { name, team: [], active: [null, null], tailwind: 0, reflect: 0, lightScreen: 0, auroraVeil: 0, megaUsed: false, faintedCount: 0, stealthRock: false, spikes: 0 };
 }
 
 /** Estado neutro (sin clima ni campos) para comparar sets fuera de combate. */

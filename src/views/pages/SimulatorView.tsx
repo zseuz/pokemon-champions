@@ -7,14 +7,15 @@ import { type Action, type BattleMon, type BattleState } from '../../models/engi
 import { STAT_ES } from '../../models/domain/dex';
 import { effectiveSpecies, type PokemonSet } from '../../models/domain/sets';
 import { HpBar, Sprite, TypeBadge, Types } from '../components/common';
+import { FORMAT_ES, type Format } from '../../models/data/meta';
 
 const STATUS_ES: Record<string, string> = { brn: 'QUE', par: 'PAR', psn: 'ENV', tox: 'TOX', slp: 'DOR' };
 
-export function Simulator({ team, onFinish }: { team: PokemonSet[]; onFinish?: (b: BattleRecord) => void }) {
-  const { recordEnd, rival, picks, togglePick, newRival, battle, setBattle, difficulty, setDifficulty, start, exit, rematch } = useSimulatorController(team, onFinish);
+export function Simulator({ team, format, onFinish }: { team: PokemonSet[]; format: Format; onFinish?: (b: BattleRecord) => void }) {
+  const { N, leads, recordEnd, rival, picks, togglePick, newRival, battle, setBattle, difficulty, setDifficulty, start, exit, rematch } = useSimulatorController(team, format, onFinish);
 
-  if (team.length < 4) {
-    return <div className="empty-state">Necesitas al menos 4 Pokémon en <b>Mi equipo</b> para simular combates (se eligen 4 de 6, como en VGC).</div>;
+  if (team.length < N) {
+    return <div className="empty-state">Necesitas al menos {N} Pokémon en <b>Mi equipo</b> de {FORMAT_ES[format]} para simular combates (se eligen {N} de 6).</div>;
   }
 
   if (!battle) {
@@ -22,8 +23,8 @@ export function Simulator({ team, onFinish }: { team: PokemonSet[]; onFinish?: (
       <div>
         <div className="section-head">
           <div>
-            <h2>Simulador de combate</h2>
-            <p className="muted">Vista previa del equipo: elige 4 Pokémon (los 2 primeros salen de inicio). El rival usa un equipo aleatorio del meta.</p>
+            <h2>Simulador de combate · {FORMAT_ES[format]}</h2>
+            <p className="muted">Vista previa del equipo: elige {N} Pokémon ({leads === 1 ? 'el primero sale' : 'los 2 primeros salen'} de inicio). El rival usa un equipo aleatorio del meta de {FORMAT_ES[format]}.</p>
           </div>
           <div className="filters">
             <label>Dificultad
@@ -35,13 +36,13 @@ export function Simulator({ team, onFinish }: { team: PokemonSet[]; onFinish?: (
         </div>
         <div className="preview-grid">
           <div className="side-box mine">
-            <h3>Tu equipo <span className="muted">({picks.length}/4 elegidos)</span></h3>
+            <h3>Tu equipo <span className="muted">({picks.length}/{N} elegidos)</span></h3>
             <div className="preview-list">
               {team.map((s, i) => {
                 const order = picks.indexOf(i);
                 return (
                   <button key={i} className={`preview-mon${order >= 0 ? ' picked' : ''}`} onClick={() => togglePick(i)}>
-                    {order >= 0 && <span className="pick-num">{order < 2 ? `Inicio ${order + 1}` : `${order + 1}`}</span>}
+                    {order >= 0 && <span className="pick-num">{order < leads ? (leads === 1 ? 'Inicio' : `Inicio ${order + 1}`) : `${order + 1}`}</span>}
                     <Sprite species={effectiveSpecies(s, true)} size={56} />
                     <span>{s.species}</span>
                   </button>
@@ -62,7 +63,7 @@ export function Simulator({ team, onFinish }: { team: PokemonSet[]; onFinish?: (
             </div>
           </div>
         </div>
-        <button className="primary big" disabled={picks.length !== 4} onClick={start}>¡Combatir!</button>
+        <button className="primary big" disabled={picks.length !== N} onClick={start}>¡Combatir!</button>
       </div>
     );
   }
@@ -90,6 +91,13 @@ function MonPanel({ m, side }: { m: BattleMon | null; side: 0 | 1 }) {
         <Types species={m.species} />
         <HpBar pct={hp} />
         <div className="small">{side === 0 ? `${m.hp}/${m.maxHP} PS` : `${Math.round(hp)}%`} {side === 0 && m.item && <span className="muted">· {m.item}</span>}</div>
+        {(m.encore || m.perish > 0 || m.tauntTurns > 0) && (
+          <div className="small boosts-line">
+            {m.encore && <span className="down">Otra Vez ({m.encore.turns})</span>}
+            {m.perish > 0 && <span className="down">☠ Canto Mortal {m.perish}</span>}
+            {m.tauntTurns > 0 && <span className="down">Mofa ({m.tauntTurns})</span>}
+          </div>
+        )}
         {boosts.length > 0 && (
           <div className="small boosts-line">
             {boosts.map((k) => <span key={k} className={m.boosts[k] > 0 ? 'up' : 'down'}>{STAT_ES[k]} {m.boosts[k] > 0 ? '+' : ''}{m.boosts[k]}</span>)}
@@ -122,6 +130,7 @@ function BattleView({ battle, setBattle, difficulty, onExit, onRematch }: {
   const sideTags = (s: typeof side0) => [
     s.tailwind && `💨 Viento Afín (${s.tailwind})`, s.reflect && `Reflejo (${s.reflect})`,
     s.lightScreen && `Pantalla Luz (${s.lightScreen})`, s.auroraVeil && `Velo Aurora (${s.auroraVeil})`,
+    s.stealthRock && '🪨 Trampa Rocas', s.spikes && `📌 Púas ×${s.spikes}`,
   ].filter(Boolean) as string[];
 
   return (
