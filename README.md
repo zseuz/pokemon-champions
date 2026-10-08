@@ -86,7 +86,7 @@ pie showData
 ```mermaid
 xychart-beta
     title "Top 10 de Dobles · % de uso"
-    x-axis [Rillaboom, Sneasler, Incineroar, Salamence, Indeedee-F, Kingambit, Golisopod, Basculegion, Garchomp, Gholdengo]
+    x-axis ["Rillaboom", "Sneasler", "Incineroar", "Salamence", "Indeedee-F", "Kingambit", "Golisopod", "Basculegion", "Garchomp", "Gholdengo"]
     y-axis "% de equipos" 0 --> 40
     bar [35.2, 31.8, 25.1, 20.8, 20.3, 20.1, 20.8, 18.5, 16.8, 15.1]
 ```
@@ -96,7 +96,7 @@ xychart-beta
 ```mermaid
 xychart-beta
     title "Individuales · tipos en el Top 50"
-    x-axis [Agua, Acero, Volador, Fantasma, Fuego, Dragón, Siniestro, Hada, Lucha, Veneno]
+    x-axis ["Agua", "Acero", "Volador", "Fantasma", "Fuego", "Dragón", "Siniestro", "Hada", "Lucha", "Veneno"]
     y-axis "Pokémon" 0 --> 12
     bar [11, 10, 8, 7, 7, 6, 6, 5, 5, 4]
 ```
@@ -104,7 +104,7 @@ xychart-beta
 ```mermaid
 xychart-beta
     title "Dobles · tipos en el Top 50"
-    x-axis [Acero, Fantasma, Fuego, Volador, Psíquico, Agua, Hada, Dragón, Lucha, Siniestro]
+    x-axis ["Acero", "Fantasma", "Fuego", "Volador", "Psíquico", "Agua", "Hada", "Dragón", "Lucha", "Siniestro"]
     y-axis "Pokémon" 0 --> 10
     bar [8, 8, 7, 7, 7, 7, 7, 6, 5, 5]
 ```
