@@ -8,6 +8,7 @@
 ![SQLite](https://img.shields.io/badge/SQLite-local-003b57?logo=sqlite&logoColor=white)
 ![Meta](https://img.shields.io/badge/meta-Temporada%206%20·%20Reg%20M--C-ffcb05)
 ![Pokémon](https://img.shields.io/badge/Pokémon-277%20especies-ef5350)
+![MVC](https://img.shields.io/badge/arquitectura-MVC-8e44ad)
 
 > Daños calculados con [`@smogon/calc`](https://github.com/smogon/damage-calc) usando las **mecánicas reales de Pokémon Champions** (nivel 50, Stat Points 66/32, Megas nuevas como Mega Floette o Garchomp Mega Z). Interfaz en español; nombres de movimientos en español con el inglés entre paréntesis.
 
@@ -136,7 +137,7 @@ Abre <http://localhost:5173>. Elige el formato arriba a la derecha (**👤 Indiv
 
 ### Dónde se guardan tus datos
 
-En una **base de datos SQLite local**: `data/champions.db` (no se sube a git). Una pequeña API (`server/`) se monta dentro del servidor de Vite, así que no hay que arrancar nada más. El navegador guarda además una copia; si la API no responde, la cabecera muestra *"⚠ Solo en el navegador"*.
+En una **base de datos SQLite local**: `data/champions.db` (no se sube a git). Una pequeña API MVC (`server/`: rutas → controlador → modelo) se monta dentro del servidor de Vite, así que no hay que arrancar nada más. El navegador guarda además una copia; si la API no responde, la cabecera muestra *"⚠ Solo en el navegador"*.
 
 | Tabla | Contenido |
 |---|---|
@@ -150,39 +151,54 @@ En una **base de datos SQLite local**: `data/champions.db` (no se sube a git). U
 
 ## Arquitectura
 
+El proyecto sigue el patrón **MVC (Modelo – Vista – Controlador)**, tanto en el navegador como en el servidor:
+
+| Capa | Carpeta | Responsabilidad |
+|---|---|---|
+| **Model** | `src/models/` | Datos y reglas del juego: meta, Pokémon, sets, cálculo de daño, motor de combate, IA, análisis (sinergias, builds, objetos, observaciones) y persistencia. **No sabe nada de la interfaz.** |
+| **View** | `src/views/` | Pantallas y componentes React. Solo **muestran** lo que les da el controlador y le **avisan** de los eventos (clics, cambios). |
+| **Controller** | `src/controllers/` | Hooks `useXController` con el **estado** de cada pantalla y las **acciones**: llaman a los modelos y entregan a la vista datos listos para pintar. |
+| Servidor | `server/` | `routes.ts` (rutas) → `controllers/stateController.ts` → `models/stateModel.ts` (SQLite). |
+
 ```mermaid
 flowchart LR
-    subgraph Navegador["🖥️ Navegador (React + TypeScript)"]
-        UI["Pestañas<br/>Ranking · Reclutamiento · Colección<br/>Equipo · Asistente · Simulador"]
-        LIB["Lógica (src/lib)<br/>ai · synergy · build · items<br/>candidates · observations · battle"]
-        CALC["@smogon/calc<br/>(mecánicas de Champions)"]
-        LS[("localStorage<br/>copia")]
-        UI --> LIB --> CALC
-        UI <--> LS
+    U(("👤 Usuario")) -->|clic / escribe| V
+    subgraph Navegador
+        V["🖼️ View<br/>src/views<br/>páginas y componentes"]
+        C["🎮 Controller<br/>src/controllers<br/>useAppController · useAssistantController<br/>useCollectionController · useBattleController…"]
+        M["🧠 Model<br/>src/models<br/>data · domain · engine · analysis · repository"]
+        V -->|eventos| C
+        C -->|estado + datos listos| V
+        C -->|consulta / actualiza| M
+        M -->|resultados| C
     end
-    subgraph Servidor["⚙️ Vite + API local (server/)"]
-        API["/api/state<br/>/api/health"]
-        DB[("SQLite<br/>data/champions.db")]
-        API <--> DB
+    subgraph Servidor["Servidor (dentro de Vite)"]
+        R["routes.ts"] --> SC["controllers/stateController"] --> SM[("models/stateModel<br/>SQLite")]
     end
-    subgraph Datos["📦 Datos generados (src/data)"]
-        PC["pokechamp.json<br/>meta: tiers + sets"]
-        AB["abilities.json"]
-        LN["learnsets.json"]
-        ES["es.json<br/>nombres en español"]
-    end
-    UI <-->|fetch| API
-    Datos --> LIB
+    M -->|repository/store · fetch /api| R
 ```
+
+### Controladores
+
+| Controlador | Pantalla | Qué gestiona |
+|---|---|---|
+| `useAppController` | App | Pestaña, formato, colección, equipos, inventario, guardado |
+| `useRankingController` | Ranking | Búsqueda, filtros y tiers desplegados |
+| `useRecruitController` · `useSelectionController` · `useSynergyController` · `useItemsController` | Reclutamiento | Subpestañas, candidatos y su evaluación, sinergias, reparto de objetos |
+| `useCollectionController` · `useTeamReviewController` | Mi colección | Encaje con el equipo, observaciones, armado automático, guardar sets |
+| `useTeamBuilderController` | Mi equipo | Tabla defensiva, cobertura, roles, amenazas, recomendaciones |
+| `useAssistantController` | Asistente | Escenario (3 vs 3 / 2 vs 2), recomendaciones, cambios, daño |
+| `useSimulatorController` · `useBattleController` · `useActionPickerController` | Simulador | Vista previa, turno, consejo, acciones de cada Pokémon |
+| `useSetEditorController` · `useBuildController` · `useMatchupController` | Editor de sets | Opciones recomendadas, build ideal, fuerte / débil |
 
 ### Cómo se generan los datos
 
 ```mermaid
 flowchart TB
-    PCH["pokechamp.gg<br/>tier list + leaderboard"] -->|npm run gen:meta| PC["src/data/pokechamp.json"]
-    SD["Pokémon Showdown<br/>@pkmn/dex"] -->|npm run gen:abilities| AB["src/data/abilities.json"]
-    SD -->|npm run gen:learnsets| LN["src/data/learnsets.json"]
-    PA["PokeAPI<br/>(GraphQL)"] -->|npm run gen:es| ES["src/data/es.json"]
+    PCH["pokechamp.gg<br/>tier list + leaderboard"] -->|npm run gen:meta| PC["src/models/data/pokechamp.json"]
+    SD["Pokémon Showdown<br/>@pkmn/dex"] -->|npm run gen:abilities| AB["src/models/data/abilities.json"]
+    SD -->|npm run gen:learnsets| LN["src/models/data/learnsets.json"]
+    PA["PokeAPI<br/>(GraphQL)"] -->|npm run gen:es| ES["src/models/data/es.json"]
     PC & AB & LN & ES --> V{{npm run validate}}
 ```
 
@@ -225,12 +241,12 @@ flowchart LR
 | Dato | Fuente | Comando |
 |---|---|---|
 | Ranking, tiers y sets más usados | [pokechamp.gg](https://pokechamp.gg/tier-list/singles/pokemon) | `npm run gen:meta` |
-| % de uso de dobles | [Pikalytics](https://www.pikalytics.com/) | a mano en `src/data/meta.ts` |
+| % de uso de dobles | [Pikalytics](https://www.pikalytics.com/) | a mano en `src/models/data/meta.ts` |
 | Mecánicas, especies y daño | [@smogon/calc](https://github.com/smogon/damage-calc) | `npm update @smogon/calc` |
 | Habilidades y movimientos por especie | [Pokémon Showdown](https://github.com/pkmn/ps) (`@pkmn/dex`) | `gen:abilities`, `gen:learnsets` |
 | Nombres en español | [PokeAPI](https://pokeapi.co/) | `npm run gen:es` |
 
-Al empezar una temporada nueva basta con `npm run gen:meta && npm run validate`. Los nombres que Champions traduce distinto a los juegos anteriores (p. ej. *Acrobacia*, *Golpe Venenoso*) se añaden en `CHAMPIONS_MOVES` de `src/lib/es.ts`.
+Al empezar una temporada nueva basta con `npm run gen:meta && npm run validate`. Los nombres que Champions traduce distinto a los juegos anteriores (p. ej. *Acrobacia*, *Golpe Venenoso*) se añaden en `CHAMPIONS_MOVES` de `src/models/domain/es.ts`.
 
 ---
 
@@ -238,19 +254,29 @@ Al empezar una temporada nueva basta con `npm run gen:meta && npm run validate`.
 
 ```
 pokemon-champions/
-├── server/            API local + base de datos SQLite (se monta en Vite)
-├── scripts/           generadores de datos y validación
+├── server/                      Servidor MVC (se monta dentro de Vite)
+│   ├── routes.ts                rutas /api/* y plugin de Vite
+│   ├── controllers/             stateController: lógica de cada petición
+│   └── models/                  stateModel: base de datos SQLite (data/champions.db)
 ├── src/
-│   ├── components/    pantallas: Ranking, Recruit, Selection, Collection, TeamReview,
-│   │                  TeamBuilder, Assistant, Simulator, SetEditor, Insight, pickers…
-│   ├── data/          meta.ts + JSON generados (pokechamp, abilities, learnsets, es)
-│   └── lib/           lógica: battle (motor), ai (asistente/IA), synergy (sinergias y
-│                      armado), build (builds y enfrentamientos), items, candidates,
-│                      observations, teamAnalysis, abilities, es, store
-└── docs/screenshots/  capturas del README
+│   ├── App.tsx                  une controlador y vista (punto de entrada MVC)
+│   ├── controllers/             hooks useXController (estado + acciones) y viewModels
+│   ├── models/
+│   │   ├── data/                meta.ts + JSON generados (pokechamp, abilities, learnsets, es)
+│   │   ├── domain/              dex, sets, habilidades, nombres en español, efectos de movimientos
+│   │   ├── engine/              battle (motor de combate), ai (asistente/IA), opponents
+│   │   ├── analysis/            teamAnalysis, synergy, build, items, candidates, observations
+│   │   └── repository/          store: persistencia (navegador + API local)
+│   └── views/
+│       ├── AppView.tsx          cabecera, pestañas y página activa
+│       ├── pages/               RankingView, RecruitView, SelectionView, CollectionView,
+│       │                        TeamBuilderView, AssistantView, SimulatorView
+│       ├── components/          SetEditor, Insight, TeamReview, Picker, SpeciesSelect…
+│       ├── format.ts · theme.ts formateadores de texto y colores
+│       └── styles.css
+├── scripts/                     generadores de datos y validación
+└── docs/screenshots/            capturas del README
 ```
-
----
 
 ## Limitaciones
 

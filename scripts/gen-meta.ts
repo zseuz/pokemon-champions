@@ -2,11 +2,11 @@
  * Descarga de pokechamp.gg el meta COMPLETO de Pokémon Champions (individuales y dobles):
  * - tier list (S → F, los 262 Pokémon del ladder) con puesto y tendencia;
  * - leaderboard con el set más usado de cada Pokémon (habilidad, objeto, naturaleza, Stat Points, movimientos y %).
- * Genera src/data/pokechamp.json. Uso: npm run gen:meta
+ * Genera src/models/data/pokechamp.json. Uso: npm run gen:meta
  */
 import { writeFileSync } from 'node:fs';
 import { toID } from '@smogon/calc';
-import { ALL_SPECIES, getItem, getMove, gen, NATURES } from '../src/lib/dex';
+import { ALL_SPECIES, getItem, getMove, gen, NATURES } from '../src/models/domain/dex';
 
 const BASE = 'https://pokechamp.gg';
 const UA = { 'User-Agent': 'Mozilla/5.0 (Champions Coach; uso personal)' };
@@ -127,7 +127,7 @@ async function format(fmt: 'singles' | 'doubles') {
 
 const singles = await format('singles');
 const doubles = await format('doubles');
-writeFileSync('src/data/pokechamp.json', JSON.stringify({ source: BASE, fetched: new Date().toISOString().slice(0, 10), singles, doubles }));
+writeFileSync('src/models/data/pokechamp.json', JSON.stringify({ source: BASE, fetched: new Date().toISOString().slice(0, 10), singles, doubles }));
 console.log(`Individuales: ${singles.count} Pokémon (${singles.withSets} con set) · ${singles.season} · actualizado ${singles.updated}`);
 console.log(`Dobles: ${doubles.count} Pokémon (${doubles.withSets} con set) · ${doubles.season} · actualizado ${doubles.updated}`);
 if (warnings.length) console.log('Avisos:\n  ' + warnings.join('\n  '));

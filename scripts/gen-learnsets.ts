@@ -1,8 +1,8 @@
-/** Genera src/data/learnsets.json: movimientos que puede aprender cada especie de Champions (índices sobre ALL_MOVES). */
+/** Genera src/models/data/learnsets.json: movimientos que puede aprender cada especie de Champions (índices sobre ALL_MOVES). */
 import { Dex } from '@pkmn/dex';
 import { writeFileSync } from 'node:fs';
-import { ALL_MOVES, ALL_SPECIES } from '../src/lib/dex';
-import { META, META_SINGLES } from '../src/data/meta';
+import { ALL_MOVES, ALL_SPECIES } from '../src/models/domain/dex';
+import { META, META_SINGLES } from '../src/models/data/meta';
 
 const moveIndex = new Map(ALL_MOVES.map((m, i) => [Dex.moves.get(m).id as string, i]));
 
@@ -28,5 +28,5 @@ for (const name of ALL_SPECIES) {
   if (!set.size) empty.push(name);
   species[name] = [...set].sort((a, b) => a - b);
 }
-writeFileSync('src/data/learnsets.json', JSON.stringify({ moves: ALL_MOVES, species }));
+writeFileSync('src/models/data/learnsets.json', JSON.stringify({ moves: ALL_MOVES, species }));
 console.log('especies', Object.keys(species).length, 'sin movimientos:', empty.join(', ') || 'ninguna');

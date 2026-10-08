@@ -1,6 +1,6 @@
-import { META, META_SINGLES } from '../src/data/meta';
-import { getSpecies, getMove, getItem, gen, megaForme } from '../src/lib/dex';
-import { validateSet } from '../src/lib/sets';
+import { META, META_SINGLES } from '../src/models/data/meta';
+import { getSpecies, getMove, getItem, gen, megaForme } from '../src/models/domain/dex';
+import { validateSet } from '../src/models/domain/sets';
 import { toID } from '@smogon/calc';
 
 let bad = 0;

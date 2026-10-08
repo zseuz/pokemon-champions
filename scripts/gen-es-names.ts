@@ -1,7 +1,7 @@
-/** Genera src/data/es.json con los nombres oficiales en español (PokeAPI) de movimientos, habilidades, objetos y naturalezas. */
+/** Genera src/models/data/es.json con los nombres oficiales en español (PokeAPI) de movimientos, habilidades, objetos y naturalezas. */
 import { writeFileSync } from 'node:fs';
 import { toID } from '@smogon/calc';
-import { ALL_ABILITIES, ALL_ITEMS, ALL_MOVES, NATURES } from '../src/lib/dex';
+import { ALL_ABILITIES, ALL_ITEMS, ALL_MOVES, NATURES } from '../src/models/domain/dex';
 
 const ES = 7; // id de idioma español en PokeAPI
 async function q(table: string, rel: string) {
@@ -26,6 +26,6 @@ const moves = pick(ALL_MOVES, await q('pokemon_v2_movename', 'pokemon_v2_move'))
 const abilities = pick(ALL_ABILITIES, await q('pokemon_v2_abilityname', 'pokemon_v2_ability'));
 const items = pick(ALL_ITEMS, await q('pokemon_v2_itemname', 'pokemon_v2_item'));
 const natures = pick(NATURES.map((n) => n.name), await q('pokemon_v2_naturename', 'pokemon_v2_nature'));
-writeFileSync('src/data/es.json', JSON.stringify({ moves: moves.out, abilities: abilities.out, items: items.out, natures: natures.out }));
+writeFileSync('src/models/data/es.json', JSON.stringify({ moves: moves.out, abilities: abilities.out, items: items.out, natures: natures.out }));
 console.log('sin traducción → movimientos:', moves.missing.length, moves.missing.slice(0, 15).join(', '));
 console.log('habilidades:', abilities.missing.join(', ') || '0', '| objetos:', items.missing.join(', ') || '0', '| naturalezas:', natures.missing.join(', ') || '0');
