@@ -10,6 +10,7 @@ import { tierColor } from '../theme';
 import { SetEditor } from '../components/SetEditor';
 import { BackupPanel } from '../components/BackupPanel';
 import type { AppController } from '../../controllers/useAppController';
+import type { BattleRecord } from '../../models/analysis/history';
 import { TeamReview } from '../components/TeamReview';
 
 interface Props {
@@ -21,10 +22,11 @@ interface Props {
   inventory: string[];
   onGoRecruit: () => void;
   backup: AppController['backup'];
+  history: BattleRecord[];
 }
 
 
-export function Collection({ format, team, setTeam, box, setBox, inventory, onGoRecruit, backup }: Props) {
+export function Collection({ format, team, setTeam, box, setBox, inventory, onGoRecruit, backup, history }: Props) {
   const { recruitSpecies, saveSet, removeFromCollection, editingSet, isCustomEntry, q, setQ, type, setType, sort, setSort, expanded, setExpanded, editing, setEditing, locked, setLocked, size, setSize, built, busy, adding, setAdding, sets, advice, fitOf, typeCount, megaCount, metaCount, list, inTeam, addToTeam, swap, build, applyBuilt } = useCollectionController({ format, team, setTeam, box, setBox, inventory });
   if (box.length === 0) {
     return (
@@ -76,7 +78,7 @@ export function Collection({ format, team, setTeam, box, setBox, inventory, onGo
 
       {/* Observaciones: qué mejorar en el equipo */}
       <TeamReview
-        team={team} collection={sets} format={format} inventory={inventory}
+        team={team} collection={sets} format={format} inventory={inventory} history={history}
         onEdit={(species) => setEditing(species)}
         onAdd={(species) => { const c = sets.find((x) => x.species === species); if (c) addToTeam(c); }}
         onSwap={(out, species) => { const c = sets.find((x) => x.species === species); if (c) swap(out, c); }}

@@ -100,7 +100,7 @@ export function save(key: string, value: unknown) {
 // ───────────────────────── Base de datos local (SQLite vía /api) ─────────────────────────
 
 /** Claves que se sincronizan con la base de datos. */
-export const DB_KEYS = ['pkmn-champions-box', 'pkmn-champions-teams', 'pkmn-champions-items', 'pkmn-champions-candidates', 'pkmn-champions-format'];
+export const DB_KEYS = ['pkmn-champions-box', 'pkmn-champions-teams', 'pkmn-champions-items', 'pkmn-champions-candidates', 'pkmn-champions-format', 'pkmn-champions-history'];
 
 export type DbStatus = 'db' | 'migrated' | 'offline' | 'error';
 export const dbState: { status: DbStatus; path?: string } = { status: 'offline' };
@@ -140,7 +140,7 @@ export async function hydrateFromDb(): Promise<DbStatus> {
       return 'migrated';
     }
     // la base de datos manda: lo que no tenga filas está vacío
-    const emptyValue: Record<string, unknown> = { 'pkmn-champions-box': [], 'pkmn-champions-items': [], 'pkmn-champions-candidates': [] };
+    const emptyValue: Record<string, unknown> = { 'pkmn-champions-box': [], 'pkmn-champions-items': [], 'pkmn-champions-candidates': [], 'pkmn-champions-history': [] };
     for (const key of DB_KEYS) {
       if (key in data) localStorage.setItem(key, JSON.stringify(data[key]));
       else if (key in emptyValue) localStorage.setItem(key, JSON.stringify(emptyValue[key]));
@@ -158,7 +158,7 @@ export async function hydrateFromDb(): Promise<DbStatus> {
 /** Claves de almacenamiento (navegador y base de datos). */
 export const STORAGE_KEYS = {
   teams: 'pkmn-champions-teams', oldTeam: 'pkmn-champions-team', box: 'pkmn-champions-box',
-  inv: 'pkmn-champions-items', format: 'pkmn-champions-format',
+  inv: 'pkmn-champions-items', format: 'pkmn-champions-format', history: 'pkmn-champions-history',
 } as const;
 
 function loadTeams(): Teams {

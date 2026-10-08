@@ -42,6 +42,16 @@ function open(): DatabaseSync {
       species  TEXT NOT NULL,
       set_json TEXT NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS battles (
+      id         TEXT PRIMARY KEY,
+      played_at  TEXT NOT NULL,
+      format     TEXT NOT NULL,          -- 'singles' | 'doubles'
+      result     TEXT NOT NULL,          -- 'win' | 'loss' | 'draw'
+      source     TEXT NOT NULL,          -- 'real' (apuntado a mano) | 'sim' (simulador)
+      mine_json  TEXT NOT NULL,          -- especies de tu equipo
+      rival_json TEXT NOT NULL,          -- especies del rival
+      notes      TEXT NOT NULL DEFAULT ''
+    );
     CREATE TABLE IF NOT EXISTS settings (
       key   TEXT PRIMARY KEY,
       value TEXT NOT NULL
@@ -63,6 +73,7 @@ export const KEYS = {
   items: 'pkmn-champions-items',
   candidates: 'pkmn-champions-candidates',
   format: 'pkmn-champions-format',
+  history: 'pkmn-champions-history',
 } as const;
 
 export function readAll(): Record<string, Json> {
@@ -86,6 +97,8 @@ export function readAll(): Record<string, Json> {
   if (items.length) out[KEYS.items] = items.map((r) => r.item);
   const cands = d.prepare('SELECT set_json FROM candidates ORDER BY position').all() as { set_json: string }[];
   if (cands.length) out[KEYS.candidates] = cands.map((r) => JSON.parse(r.set_json));
+  const battles = d.prepare('SELECT * FROM battles ORDER BY played_at').all() as { id: string; played_at: string; format: string; result: string; source: string; mine_json: string; rival_json: string; notes: string }[];
+  if (battles.length) out[KEYS.history] = battles.map((b) => ({ id: b.id, date: b.played_at, format: b.format, result: b.result, source: b.source, mine: JSON.parse(b.mine_json), rival: JSON.parse(b.rival_json), notes: b.notes }));
   const fmt = d.prepare("SELECT value FROM settings WHERE key = 'format'").get() as { value: string } | undefined;
   if (fmt) out[KEYS.format] = JSON.parse(fmt.value);
   return out;
@@ -129,6 +142,14 @@ export function write(key: string, value: Json) {
         (value as PokemonSetLike[]).forEach((s, i) => ins.run(i, s.species, JSON.stringify(s)));
         break;
       }
+      case KEYS.history: {
+        d.exec('DELETE FROM battles');
+        const ins = d.prepare('INSERT INTO battles (id, played_at, format, result, source, mine_json, rival_json, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+        for (const b of value as { id: string; date: string; format: string; result: string; source: string; mine: string[]; rival: string[]; notes?: string }[]) {
+          ins.run(b.id, b.date, b.format, b.result, b.source, JSON.stringify(b.mine), JSON.stringify(b.rival), b.notes ?? '');
+        }
+        break;
+      }
       case KEYS.format:
         d.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('format', ?)").run(JSON.stringify(value));
         break;
@@ -147,5 +168,6 @@ export function stats() {
     teamMembers: n('SELECT COUNT(*) AS n FROM team_members'),
     items: n('SELECT COUNT(*) AS n FROM inventory'),
     candidates: n('SELECT COUNT(*) AS n FROM candidates'),
+    battles: n('SELECT COUNT(*) AS n FROM battles'),
   };
 }

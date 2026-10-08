@@ -3,8 +3,9 @@ import { useState } from 'react';
 import { createBattle, type BattleState } from '../models/engine/battle';
 import { pickFour, randomMetaTeam } from '../models/engine/opponents';
 import type { PokemonSet } from '../models/domain/sets';
+import { newBattle, type BattleRecord } from '../models/analysis/history';
 
-export function useSimulatorController(team: PokemonSet[]) {
+export function useSimulatorController(team: PokemonSet[], onFinish?: (b: BattleRecord) => void) {
   const [rival, setRival] = useState<PokemonSet[]>(() => randomMetaTeam());
   const [picks, setPicks] = useState<number[]>([0, 1, 2, 3]);
   const [rivalPicks, setRivalPicks] = useState<number[] | null>(null);
@@ -24,5 +25,15 @@ export function useSimulatorController(team: PokemonSet[]) {
   const exit = () => { setBattle(null); setRivalPicks(null); };
   const rematch = () => setBattle(createBattle(picks.map((i) => team[i]), (rivalPicks ?? [0, 1, 2, 3]).map((i) => rival[i])));
 
-  return { rival, picks, togglePick, newRival, battle, setBattle, difficulty, setDifficulty, start, exit, rematch };
+  /** Al terminar un combate se guarda en el historial (origen: simulador). */
+  const recordEnd = (b: BattleState) => {
+    if (!onFinish || b.phase !== 'end') return;
+    onFinish(newBattle({
+      format: 'doubles', source: 'sim',
+      result: b.winner === 0 ? 'win' : b.winner === 1 ? 'loss' : 'draw',
+      mine: b.sides[0].team.map((m) => m.set.species), rival: b.sides[1].team.map((m) => m.set.species),
+    }));
+  };
+
+  return { recordEnd, rival, picks, togglePick, newRival, battle, setBattle, difficulty, setDifficulty, start, exit, rematch };
 }

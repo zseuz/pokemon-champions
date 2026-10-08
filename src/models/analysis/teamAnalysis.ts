@@ -1,4 +1,4 @@
-import { metaTop, metaWeight, usageLabel, type Format, type MetaEntry } from '../data/meta';
+import { metaFor, metaTop, metaWeight, usageLabel, type Format, type MetaEntry } from '../data/meta';
 import { computeDamage, createMon, isStatusMove, moveTargetKind, type BattleMon, type BattleState, type SideState } from '../engine/battle';
 import { effectiveness, getMove, getSpecies, TYPE_ES, TYPES } from '../domain/dex';
 import { STATUS_MOVES } from '../domain/moveEffects';
@@ -133,17 +133,22 @@ export function bestHit(state: BattleState, a: BattleMon, d: BattleMon) {
   return best;
 }
 
-export function threats(team: PokemonSet[], limit = 12, format: Format = 'doubles'): ThreatRow[] {
+/**
+ * Mayores amenazas del meta para un equipo. `extra` suma peso a especies concretas
+ * (p. ej. las que más te ganan en tu historial real).
+ */
+export function threats(team: PokemonSet[], limit = 12, format: Format = 'doubles', extra: Record<string, number> = {}): ThreatRow[] {
   if (!team.length) return [];
   const state = neutralState();
   const ours = team.map((s) => battleMonFor(s, 0));
   // los 80 más usados del ladder (calcular los 262 sería lento y los últimos casi no aparecen)
-  const rows = metaTop(format, 80).filter((e) => e.set && !team.some((s) => s.species === e.species)).map((entry) => {
+  const pool = [...metaTop(format, 80), ...metaFor(format).filter((e) => extra[e.species] && (e.rank ?? 0) > 80)];
+  const rows = pool.filter((e) => e.set && !team.some((s) => s.species === e.species)).map((entry) => {
     const foe = battleMonFor(entry.set!, 1);
     const toUs = ours.map((m) => ({ species: m.species, ...bestHit(state, foe, m) }));
     const fromUs = ours.map((m) => ({ species: m.species, ...bestHit(state, m, foe) })).sort((a, b) => b.pct - a.pct)[0];
     const ohkos = toUs.filter((x) => x.pct >= 100).length;
-    const danger = toUs.reduce((t, x) => t + Math.min(100, x.pct), 0) / ours.length + ohkos * 10 - Math.min(100, fromUs.pct) / 3 + metaWeight(entry) / 2;
+    const danger = toUs.reduce((t, x) => t + Math.min(100, x.pct), 0) / ours.length + ohkos * 10 - Math.min(100, fromUs.pct) / 3 + metaWeight(entry) / 2 + (extra[entry.species] ?? 0);
     return { entry, toUs, fromUs, ohkos, danger };
   });
   return rows.sort((a, b) => b.danger - a.danger).slice(0, limit);

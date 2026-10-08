@@ -3,6 +3,7 @@ import { FORMAT_ES, type Format } from '../../models/data/meta';
 import { type Level, type Observation } from '../../models/analysis/observations';
 import type { PokemonSet } from '../../models/domain/sets';
 import { Sprite } from './common';
+import type { BattleRecord } from '../../models/analysis/history';
 
 const LEVEL: Record<Level, { icon: string; label: string }> = {
   alta: { icon: '🔴', label: 'Importante' },
@@ -12,17 +13,18 @@ const LEVEL: Record<Level, { icon: string; label: string }> = {
 };
 
 /** Panel de observaciones: qué mejorar en el equipo, con acciones directas. */
-export function TeamReview({ team, collection, format, inventory, onEdit, onAdd, onSwap, teamFull }: {
+export function TeamReview({ team, collection, format, inventory, history = [], onEdit, onAdd, onSwap, teamFull }: {
   team: PokemonSet[];
   collection: PokemonSet[];
   format: Format;
   inventory: string[];
+  history?: BattleRecord[];
   onEdit: (species: string) => void;
   onAdd: (species: string) => void;
   onSwap: (out: string, inSpecies: string) => void;
   teamFull: boolean;
 }) {
-  const { obs, showLow, setShowLow, counts, visible, inTeam } = useTeamReviewController(team, collection, format, inventory);
+  const { obs, showLow, setShowLow, counts, visible, inTeam } = useTeamReviewController(team, collection, format, inventory, history);
   return (
     <section className="panel review">
       <div className="review-head">

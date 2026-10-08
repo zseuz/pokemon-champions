@@ -6,13 +6,14 @@ import { useEffect, useMemo, useState } from 'react';
 import type { Format, MetaEntry } from '../models/data/meta';
 import { defaultSet, type PokemonSet } from '../models/domain/sets';
 import { parseShowdown, teamToShowdown } from '../models/domain/showdown';
+import type { BattleRecord } from '../models/analysis/history';
 import { createBackup, importSets, mergeBackup, parseBackup } from '../models/repository/backup';
 import {
   addSpecies, dbState, load, loadAppState, onDbStatus, resolveTeams, save, STORAGE_KEYS, syncTeamIntoBox,
   type BoxEntry, type DbStatus, type TeamIds,
 } from '../models/repository/store';
 
-export type Tab = 'ranking' | 'recruit' | 'collection' | 'team' | 'assistant' | 'sim';
+export type Tab = 'ranking' | 'recruit' | 'collection' | 'team' | 'assistant' | 'sim' | 'history';
 
 export function useAppController() {
   const [tab, setTab] = useState<Tab>(() => (location.hash.slice(1) as Tab) || 'ranking');
@@ -21,6 +22,7 @@ export function useAppController() {
   const [box, setBox] = useState<BoxEntry[]>(initial.box);
   const [teamIds, setTeamIds] = useState<TeamIds>(initial.teamIds);
   const [inventory, setInventory] = useState<string[]>(initial.inventory);
+  const [history, setHistory] = useState<BattleRecord[]>(() => load<BattleRecord[]>(STORAGE_KEYS.history, []));
   const [db, setDb] = useState<DbStatus>(dbState.status);
   useEffect(() => onDbStatus(setDb), []);
 
@@ -32,6 +34,7 @@ export function useAppController() {
   useEffect(() => save(STORAGE_KEYS.box, box), [box]);
   useEffect(() => save(STORAGE_KEYS.inv, inventory), [inventory]);
   useEffect(() => save(STORAGE_KEYS.format, format), [format]);
+  useEffect(() => save(STORAGE_KEYS.history, history), [history]);
   useEffect(() => { location.hash = tab; }, [tab]);
 
   /** Cambia el equipo del formato actual; si editaste el set de algún miembro, se guarda en tu colección. */
@@ -82,7 +85,12 @@ export function useAppController() {
     },
   };
 
+  // ── Historial de combates ──
+  const addBattle = (b: BattleRecord) => setHistory((h) => [...h, b]);
+  const removeBattle = (id: string) => setHistory((h) => h.filter((b) => b.id !== id));
+
   return {
+    history, addBattle, removeBattle,
     backup,
     tab, setTab, format, setFormat, db, dbPath: dbState.path,
     box, setBox, teams, team, setTeam, inventory, setInventory,

@@ -3,13 +3,14 @@
  * amenazas del meta, objetos, Megas, sets mejorables y cambios con Pokémon de la colección.
  */
 import { MEGA_STONES } from '@smogon/calc';
-import { FORMAT_ES, type Format } from '../data/meta';
+import { FORMAT_ES, metaEntry, type Format } from '../data/meta';
+import { historyStats, lossWeights, type BattleRecord } from './history';
 import { gradeSet } from './candidates';
 import { ALL_ITEMS, megaForme, TYPE_ES } from '../domain/dex';
 import { assignItems, itemName } from './items';
 import { effectiveSpecies, SP_MAX_TOTAL, spTotal, type PokemonSet } from '../domain/sets';
 import { collectionAdvice } from './synergy';
-import { battleMonFor, defensiveChart, defensiveMultiplier, offensiveCoverage, teamRoles, threats } from './teamAnalysis';
+import { battleMonFor, bestHit, defensiveChart, neutralState, defensiveMultiplier, offensiveCoverage, teamRoles, threats } from './teamAnalysis';
 
 export type Level = 'alta' | 'media' | 'baja' | 'ok';
 
@@ -33,7 +34,7 @@ export interface Observation {
 const ORDER: Record<Level, number> = { alta: 0, media: 1, baja: 2, ok: 3 };
 const IMPORTANT_ROLES = new Set(['fakeout', 'intimidate', 'speed', 'hazards', 'pivot', 'priority']);
 
-export function teamObservations(team: PokemonSet[], collection: PokemonSet[], format: Format, inventory: string[] = []): Observation[] {
+export function teamObservations(team: PokemonSet[], collection: PokemonSet[], format: Format, inventory: string[] = [], history: BattleRecord[] = []): Observation[] {
   const obs: Observation[] = [];
   const add = (o: Observation) => obs.push(o);
   const bench = collection.filter((c) => !team.some((t) => t.species === c.species));
@@ -100,7 +101,8 @@ export function teamObservations(team: PokemonSet[], collection: PokemonSet[], f
   }
 
   // 5) Amenazas del meta (las 3 peores, en una sola observación)
-  const bad = threats(team, 6, format)
+  const extra = lossWeights(history, format);
+  const bad = threats(team, 6, format, extra)
     .map((th) => ({ th, kos: th.toUs.filter((x) => x.pct >= 100).map((x) => x.species) }))
     .filter(({ th, kos }) => kos.length >= 3 || th.fromUs.pct < 50)
     .slice(0, 3);
@@ -111,6 +113,31 @@ export function teamObservations(team: PokemonSet[], collection: PokemonSet[], f
       title: `Amenazas del meta: ${bad.map((b) => `${b.th.entry.species} (#${b.th.entry.rank})`).join(', ')}`,
       points: bad.map(({ th, kos }) => `${th.entry.species}: ${kos.length ? `KO directo a ${kos.join(', ')}` : 'te desgasta mucho'} — tu mejor golpe: ${th.fromUs.move} de ${th.fromUs.species} (${Math.round(th.fromUs.pct)}%)`),
       fix: 'Revisa su análisis en "Mi equipo → Mayores amenazas" y piensa en un Pokémon que los aguante y les haga mucho daño.',
+    });
+  }
+
+  // 5b) Tu historial real: rivales que más te ganan y quién de tu colección les hace frente
+  const stats = historyStats(history, format);
+  if (stats.nemesis.length) {
+    const state = neutralState();
+    const counters = (species: string) => {
+      const foeSet = metaEntry(species, format)?.set;
+      if (!foeSet) return [];
+      const foe = battleMonFor(foeSet, 1);
+      return collection
+        .map((c) => ({ c, mine: bestHit(state, battleMonFor(c, 0), foe).pct, theirs: bestHit(state, foe, battleMonFor(c, 0)).pct }))
+        .filter((x) => x.mine >= 60 && x.theirs < 60)
+        .sort((a, b) => b.mine - a.mine)
+        .slice(0, 2)
+        .map((x) => ({ species: x.c.species, why: `le hace ${Math.round(x.mine)}%` }));
+    };
+    const top = stats.nemesis.slice(0, 3);
+    add({
+      level: top[0].losses >= 3 ? 'alta' : 'media', area: 'Historial',
+      title: `En tus combates pierdes más contra: ${top.map((n) => n.species).join(', ')}`,
+      points: top.map((n) => `${n.species}: ${n.losses} derrotas en ${n.games} combates (${n.winRate}% de victorias)`),
+      fix: 'Pokémon de tu colección que les hacen frente:',
+      suggest: top.flatMap((n) => counters(n.species)).filter((x, i, a) => a.findIndex((y) => y.species === x.species) === i).slice(0, 4),
     });
   }
 

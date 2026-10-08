@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useBattleController } from '../../controllers/useBattleController';
 import { useSimulatorController } from '../../controllers/useSimulatorController';
+import type { BattleRecord } from '../../models/analysis/history';
 import { useActionPickerController } from '../../controllers/useActionPickerController';
 import { type Action, type BattleMon, type BattleState } from '../../models/engine/battle';
 import { STAT_ES } from '../../models/domain/dex';
@@ -9,8 +10,8 @@ import { HpBar, Sprite, TypeBadge, Types } from '../components/common';
 
 const STATUS_ES: Record<string, string> = { brn: 'QUE', par: 'PAR', psn: 'ENV', tox: 'TOX', slp: 'DOR' };
 
-export function Simulator({ team }: { team: PokemonSet[] }) {
-  const { rival, picks, togglePick, newRival, battle, setBattle, difficulty, setDifficulty, start, exit, rematch } = useSimulatorController(team);
+export function Simulator({ team, onFinish }: { team: PokemonSet[]; onFinish?: (b: BattleRecord) => void }) {
+  const { recordEnd, rival, picks, togglePick, newRival, battle, setBattle, difficulty, setDifficulty, start, exit, rematch } = useSimulatorController(team, onFinish);
 
   if (team.length < 4) {
     return <div className="empty-state">Necesitas al menos 4 Pokémon en <b>Mi equipo</b> para simular combates (se eligen 4 de 6, como en VGC).</div>;
@@ -68,7 +69,7 @@ export function Simulator({ team }: { team: PokemonSet[] }) {
 
   return (
     <BattleView
-      battle={battle} setBattle={setBattle} difficulty={difficulty}
+      battle={battle} setBattle={(b) => { setBattle(b); recordEnd(b); }} difficulty={difficulty}
       onExit={exit}
       onRematch={rematch}
     />
