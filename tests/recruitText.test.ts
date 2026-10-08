@@ -44,3 +44,12 @@ Firme`;
     expect(parseRecruitText('hola mundo').warnings[0]).toContain('No se reconoció');
   });
 });
+
+describe('Nombres de movimientos de 9.ª generación', () => {
+  it('todos los movimientos de Champions tienen nombre en español', async () => {
+    const { MOVES_ES, CHAMPIONS_MOVES } = await import('../src/models/domain/es');
+    const learn = (await import('../src/models/data/learnsets.json')).default as { moves: string[] };
+    expect(learn.moves.filter((m) => !MOVES_ES[m] && !CHAMPIONS_MOVES[m])).toEqual([]);
+    expect(scanLine('Fiebre Dorada')[0]).toMatchObject({ kind: 'move', value: 'Make It Rain' });
+  });
+});

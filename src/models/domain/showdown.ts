@@ -14,7 +14,7 @@ import { toID } from '@smogon/calc';
 import es from '../data/es.json';
 import { ALL_ABILITIES, ALL_ITEMS, ALL_MOVES, ALL_SPECIES, NATURES, STATS, type StatID } from './dex';
 import { emptySP, type PokemonSet } from './sets';
-import { CHAMPIONS_MOVES } from './es';
+import { CHAMPIONS_MOVES, MOVES_ES } from './es';
 
 const STAT_NAMES: Record<StatID, string> = { hp: 'HP', atk: 'Atk', def: 'Def', spa: 'SpA', spd: 'SpD', spe: 'Spe' };
 const STAT_FROM: Record<string, StatID> = { hp: 'hp', ps: 'hp', atk: 'atk', ata: 'atk', def: 'def', spa: 'spa', atesp: 'spa', spd: 'spd', defesp: 'spd', spe: 'spe', vel: 'spe' };
@@ -48,7 +48,7 @@ function index(names: string[], esMap: Record<string, string> = {}) {
 export const SPECIES = index(ALL_SPECIES);
 const ITEMS = index(ALL_ITEMS, D.items);
 export const ABILITIES = index(ALL_ABILITIES, D.abilities);
-export const MOVES = index(ALL_MOVES, { ...D.moves, ...CHAMPIONS_MOVES });
+export const MOVES = index(ALL_MOVES, { ...MOVES_ES, ...CHAMPIONS_MOVES });
 export const NATURE_IDX = index(NATURES.map((n) => n.name), D.natures);
 
 export interface ParseResult { sets: PokemonSet[]; warnings: string[] }

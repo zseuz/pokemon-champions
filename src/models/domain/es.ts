@@ -15,7 +15,29 @@ export const CHAMPIONS_MOVES: Record<string, string> = {
   'Rage Fist': 'Puño Furia',
 };
 
-export const moveEs = (m: string) => CHAMPIONS_MOVES[m] ?? D.moves[m] ?? m;
+/**
+ * Movimientos de la 9.ª generación sin nombre español en PokeAPI
+ * (nombres oficiales tal como los muestra Pokémon Champions, según GameWith).
+ */
+const GEN9_MOVES: Record<string, string> = {
+  'Aqua Cutter': 'Tajo Acuático', 'Aqua Step': 'Danza Acuática', 'Armor Cannon': 'Cañón Armadura', 'Axe Kick': 'Patada Hacha',
+  'Barb Barrage': 'Mil Púas Tóxicas', 'Bitter Blade': 'Espada Lamento', 'Bitter Malice': 'Rencor Reprimido', 'Blood Moon': 'Luna Roja',
+  'Ceaseless Edge': 'Tajo Metralla', 'Chilling Water': 'Agua Fría', 'Chilly Reception': 'Fría Acogida', Comeuppance: 'Resarcimiento',
+  'Double Shock': 'Electropalmas', 'Gigaton Hammer': 'Martillo Colosal', 'Glaive Rush': 'Asalto Espadón', 'Headlong Rush': 'Arremetida',
+  'Hyper Drill': 'Hipertaladro', 'Ice Spinner': 'Pirueta Helada', 'Infernal Parade': 'Marcha Espectral', 'Jet Punch': 'Puño Jet',
+  'Kowtow Cleave': 'Genufendiente', 'Last Respects': 'Homenaje Póstumo', 'Lumina Crash': 'Fotocolisión', 'Make It Rain': 'Fiebre Dorada',
+  'Matcha Gotcha': 'Cañón Batidor', 'Mortal Spin': 'Giro Mortífero', 'Mountain Gale': 'Viento Carámbano', 'Population Bomb': 'Proliferación',
+  Pounce: 'Brinco', 'Power Shift': 'Cambiapoder', 'Psyshield Bash': 'Asalto Barrera', 'Raging Bull': 'Furia Taurina',
+  'Raging Fury': 'Erupción de Ira', 'Revival Blessing': 'Plegaria Vital', 'Salt Cure': 'Salazón', 'Shed Tail': 'Autotomía',
+  Shelter: 'Retracción', Snowscape: 'Paisaje Nevado', 'Spicy Extract': 'Extracto Picante', 'Stone Axe': 'Hachazo Pétreo',
+  'Syrup Bomb': 'Bomba Caramelo', 'Tidy Up': 'Limpieza General', 'Torch Song': 'Canto Ardiente', Trailblaze: 'Abrecaminos',
+  'Triple Arrows': 'Triple Flecha', 'Triple Dive': 'Triple Inmersión', 'Twin Beam': 'Láser Doble', 'Wave Crash': 'Envite Acuático',
+};
+
+/** Todos los nombres españoles de movimientos (PokeAPI + 9.ª generación). */
+export const MOVES_ES: Record<string, string> = { ...D.moves, ...GEN9_MOVES };
+
+export const moveEs = (m: string) => CHAMPIONS_MOVES[m] ?? MOVES_ES[m] ?? m;
 export const abilityEsName = (a: string) => D.abilities[a] ?? a;
 export const itemEs = (i: string) => D.items[i] ?? i;
 export const natureEs = (n: string) => D.natures[n] ?? n;
@@ -31,7 +53,7 @@ export function searchKey(...names: (string | undefined)[]) {
   return normalize(names.filter(Boolean).join(' '));
 }
 export function moveSearch(m: string) {
-  return searchKey(m, D.moves[m], CHAMPIONS_MOVES[m]);
+  return searchKey(m, MOVES_ES[m], CHAMPIONS_MOVES[m]);
 }
 export function normalize(s: string) {
   return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9 ]/g, '');
