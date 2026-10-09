@@ -51,6 +51,9 @@ export const ALL_ITEMS = [...gen.items].map((i) => i.name as string).sort();
 export const ALL_ABILITIES = [...gen.abilities].map((a) => a.name as string).sort();
 export const NATURES = [...gen.natures].map((n) => ({ name: n.name as string, plus: n.plus, minus: n.minus }));
 
+/** ¿Es una megapiedra? */
+export const isMegaStone = (item: string) => item in (MEGA_STONES as Record<string, unknown>);
+
 /** Forma Mega a la que evoluciona `species` con `item`, si aplica. */
 export function megaForme(species: string, item?: string): string | undefined {
   if (!item) return;

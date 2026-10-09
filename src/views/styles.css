@@ -763,7 +763,8 @@ td.okc { color: #8bf0a5; }
   max-height: 92vh;
   overflow: auto;
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.05);
-  animation: modalScaleIn 0.25s var(--ease-spring) forwards;
+  /* backwards: al terminar no queda ningún transform; si no, los desplegables (position: fixed) quedan recortados dentro de la ventana */
+  animation: modalScaleIn 0.25s var(--ease-spring) backwards;
 }
 @keyframes modalScaleIn {
   from {
@@ -772,7 +773,7 @@ td.okc { color: #8bf0a5; }
   }
   to {
     opacity: 1;
-    transform: scale(1) translateY(0);
+    transform: none;
   }
 }
 .editor-head { display: flex; gap: 14px; align-items: center; margin-bottom: 10px; }
@@ -2393,3 +2394,6 @@ kbd { border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; font-si
 .hp-row input[type='range'] { flex: 1 1 90px; min-width: 0; width: auto; }
 .hp-row .small-btn { flex: none; padding: 3px 8px; }
 .slot { overflow: hidden; }
+
+.item-adder { min-width: 260px; }
+.item-adder .picker-btn { background: var(--card); border: 1px solid var(--accent2); border-radius: 8px; padding: 6px 10px; }

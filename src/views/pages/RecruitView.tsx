@@ -2,11 +2,12 @@ import { useRecruitController } from '../../controllers/useRecruitController';
 import { useItemsController } from '../../controllers/useItemsController';
 import { useSynergyController } from '../../controllers/useSynergyController';
 import { FORMAT_ES, type Format } from '../../models/data/meta';
-import { getItem, getSpecies } from '../../models/domain/dex';
+import { getSpecies } from '../../models/domain/dex';
 import { itemName } from '../format';
 import { effectiveSpecies, type PokemonSet } from '../../models/domain/sets';
 import { type BoxEntry } from '../../models/repository/store';
 import { Catalog } from '../components/Catalog';
+import { Picker } from '../components/Picker';
 import { Selection } from './SelectionView';
 import { Sprite, Types, ItemIcon } from '../components/common';
 
@@ -124,15 +125,15 @@ function SynergyView({ format, team, setTeam, box, setBox }: Props) {
 // ───────────────────────── Objetos ─────────────────────────
 
 function ItemsView({ format, team, setTeam, box, inventory, setInventory }: Props) {
-  const { addCommon, addMeta, adding, setAdding, result, addItems, stones } = useItemsController({ format, team, box, inventory, setInventory });
+  const { addCommon, addMeta, options, result, addItems, stones } = useItemsController({ format, team, box, inventory, setInventory });
   return (
     <div>
       <div className="panel compact">
         <h3>Tu inventario</h3>
         <div className="row wrap">
-          <input list="dl-items" placeholder="Añadir objeto…" value={adding} onChange={(e) => setAdding(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter' && getItem(adding)) { addItems([adding]); setAdding(''); } }} />
-          <button className="primary" disabled={!getItem(adding)} onClick={() => { addItems([adding]); setAdding(''); }}>Añadir</button>
+          <div className="item-adder">
+            <Picker value="" options={options} onChange={(v) => v && addItems([v])} placeholder="＋ Añadir objeto…" icon={(v) => <ItemIcon item={v} />} />
+          </div>
           <button onClick={addCommon}>+ Objetos comunes</button>
           <button onClick={addMeta}>+ Objetos del meta</button>
           {stones.length > 0 && <button onClick={() => addItems(stones)}>+ Megapiedras de mis Pokémon</button>}
