@@ -8,6 +8,8 @@ import { defaultSet, type PokemonSet } from '../domain/sets';
 export interface BoxEntry {
   species: string;
   set?: PokemonSet;
+  /** si lo reclutaste de prueba: cuándo termina la prueba (ISO); sin definir = reclutado de forma definitiva */
+  trialUntil?: string;
 }
 
 export type Teams = Record<Format, PokemonSet[]>;
@@ -53,9 +55,10 @@ export function normalizeBox(raw: unknown, prefer: Format = 'singles'): BoxEntry
   if (!Array.isArray(raw)) return [];
   const other: Format = prefer === 'singles' ? 'doubles' : 'singles';
   return raw.filter((r) => r && typeof r === 'object' && 'species' in r).map((r) => {
-    const e = r as { species: string; set?: PokemonSet; sets?: Partial<Record<Format, PokemonSet>> };
+    const e = r as { species: string; set?: PokemonSet; sets?: Partial<Record<Format, PokemonSet>>; trialUntil?: string };
     const set = e.set ?? e.sets?.[prefer] ?? e.sets?.[other];
-    return set ? { species: e.species, set } : { species: e.species };
+    const base: BoxEntry = set ? { species: e.species, set } : { species: e.species };
+    return typeof e.trialUntil === 'string' && e.trialUntil ? { ...base, trialUntil: e.trialUntil } : base;
   });
 }
 

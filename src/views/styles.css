@@ -2397,3 +2397,17 @@ kbd { border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; font-si
 
 .item-adder { min-width: 260px; }
 .item-adder .picker-btn { background: var(--card); border: 1px solid var(--accent2); border-radius: 8px; padding: 6px 10px; }
+
+/* ── Reclutamiento de prueba (7 días) ── */
+.trial-btn { border-color: #6b5420; background: #3a2f12; color: #f5c97a; font-weight: 600; }
+.trial-btn:hover { background: #4a3c16; }
+.trial-tag { font-size: .72rem; font-weight: 600; padding: 1px 8px; border-radius: 999px; margin-left: 6px; background: #3a2f12; color: #f5c97a; border: 1px solid #6b5420; }
+.trial-tag.expired { background: #3a1d24; color: #ff9a9a; border-color: var(--bad); }
+.trial-panel { margin: 0 0 14px; padding: 12px 14px; border-radius: 12px; background: var(--bg2); border: 1px solid #6b5420; }
+.trial-panel.expired { border-color: var(--bad); }
+.trial-panel h3 { margin: 0 0 4px; }
+.trial-list { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+.trial-row { display: flex; align-items: center; gap: 10px; padding: 6px 10px; border-radius: 8px; background: var(--card); border-left: 4px solid #6b5420; flex-wrap: wrap; }
+.trial-row > div { flex: 1; min-width: 160px; }
+.trial-row.last { border-left-color: #f5c97a; }
+.trial-row.expired { border-left-color: var(--bad); }

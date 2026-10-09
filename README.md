@@ -35,7 +35,7 @@
 | Pestaña | Qué hace |
 |---|---|
 | 🏆 **Ranking** | Los **262 Pokémon** del ladder de cada formato en tiers **S → F**, con puesto, tendencia respecto a la temporada anterior y el **set más usado con el % de jugadores** que lleva cada parte. |
-| 🤝 **Reclutamiento** | **🎲 Selección del juego**: registras los candidatos que te ofrece el juego *tal como vienen* (habilidad, ataques, naturaleza, Stat Points) — a mano o **📷 leyendo una captura de pantalla** (OCR) — y te dice **cuál elegir**: calidad del ejemplar, aporte a tu equipo, enfrentamientos contra el meta y si **ya tienes uno igual o mejor**. **🔍 Buscar Pokémon**: catálogo visual filtrable por nombre y tipo. **🤝 Sinergia por habilidad**: quién combina con tu equipo (climas, campos, Liviano + semillas, Pararrayos, Espacio Raro…). **🎒 Mis objetos**: reparto óptimo de tu inventario. |
+| 🤝 **Reclutamiento** | **🎲 Selección del juego**: registras los candidatos que te ofrece el juego *tal como vienen* (habilidad, ataques, naturaleza, Stat Points) — a mano o **📷 leyendo una captura de pantalla** (OCR) — y te dice **cuál elegir**: calidad del ejemplar, aporte a tu equipo, enfrentamientos contra el meta y si **ya tienes uno igual o mejor**. Con **🕒 Reclutar de prueba (7 días)** lo pruebas una semana: *Mi colección* muestra la cuenta atrás y, cuando termina, te deja elegir entre **Quedármelo** o quitarlo. **🔍 Buscar Pokémon**: catálogo visual filtrable por nombre y tipo. **🤝 Sinergia por habilidad**: quién combina con tu equipo (climas, campos, Liviano + semillas, Pararrayos, Espacio Raro…). **🎒 Mis objetos**: reparto óptimo de tu inventario. |
 | 📚 **Mi colección** | Todos tus reclutados con **tu set** (el mismo en individuales y dobles). **🩺 Observaciones del equipo** (debilidades compartidas, roles que faltan, amenazas, objetos, sets mejorables), mejores incorporaciones/cambios, aporte de cada miembro y **armado automático** del mejor equipo. **💾 Copia de seguridad** (JSON) e **importar/exportar en formato Showdown**. |
 | 🧩 **Mi equipo** | **Varios equipos por formato** (Equipo 1, Equipo 2…, como en el juego): crear, duplicar, renombrar y borrar. Cada equipo puede dar a un mismo Pokémon un **objeto distinto** (el resto del set es el de tu colección). Tabla defensiva, cobertura ofensiva, roles, amenazas del meta y recomendaciones. |
 | 🧠 **Asistente** | **Individuales (3 vs 3)** o **Dobles (llevas 4, 2 vs 2 en combate)**; en dobles, **plan detallado**: el mejor ataque de cada uno contra cada rival (daño, KO, quién es más rápido), ataques en área, KOs atacando los dos al mismo y qué rival amenaza a cuál de los tuyos. configuras la situación (PS, estados, debilitados, cambios de stats, clima, campo, Espacio Raro, Viento Afín, pantallas) y te recomienda **atacar o cambiar**, predice al rival y muestra el daño exacto. **🔮 Mira un turno adelante**: simula cada jugada contra la mejor respuesta del rival. |
@@ -147,7 +147,7 @@ En una **base de datos SQLite local**: `data/champions.db` (no se sube a git). U
 
 | Tabla | Contenido |
 |---|---|
-| `collection` | Tu colección: cada Pokémon con **tu set** (igual en ambos formatos) |
+| `collection` | Tu colección: cada Pokémon con **tu set** (igual en ambos formatos) y, si lo reclutaste de prueba, cuándo termina la prueba |
 | `team_members` | Equipos de individuales y dobles |
 | `inventory` | Tus objetos |
 | `candidates` | La selección de reclutamiento en curso |

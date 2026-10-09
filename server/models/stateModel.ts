@@ -11,7 +11,7 @@ export const DB_PATH = resolve(process.cwd(), 'data', 'champions.db');
 type Json = unknown;
 interface PokemonSetLike { species: string; [k: string]: unknown }
 /** Pokémon de la colección: `set` es el set del jugador (igual en ambos formatos). */
-interface BoxEntryLike { species: string; set?: PokemonSetLike; sets?: Record<string, PokemonSetLike> }
+interface BoxEntryLike { species: string; set?: PokemonSetLike; sets?: Record<string, PokemonSetLike>; trialUntil?: string }
 
 let db: DatabaseSync | null = null;
 
@@ -65,6 +65,9 @@ function open(): DatabaseSync {
       value TEXT NOT NULL
     );
   `);
+  // bases de datos anteriores: añadir la columna del reclutamiento de prueba
+  const cols = db.prepare('PRAGMA table_info(collection)').all() as { name: string }[];
+  if (!cols.some((c) => c.name === 'trial_until')) db.exec('ALTER TABLE collection ADD COLUMN trial_until TEXT');
   return db;
 }
 
@@ -88,12 +91,13 @@ export const KEYS = {
 export function readAll(): Record<string, Json> {
   const d = open();
   const out: Record<string, Json> = {};
-  const box = d.prepare('SELECT species, sets_json FROM collection ORDER BY position').all() as { species: string; sets_json: string }[];
+  const box = d.prepare('SELECT species, sets_json, trial_until FROM collection ORDER BY position').all() as { species: string; sets_json: string; trial_until: string | null }[];
   if (box.length) out[KEYS.box] = box.map((r) => {
     const v = JSON.parse(r.sets_json) as PokemonSetLike | Record<string, PokemonSetLike> | null;
     // formato actual: el set directamente; formato antiguo: { singles, doubles }
     const set = v && 'species' in v ? v : v ? ((v as Record<string, PokemonSetLike>).singles ?? (v as Record<string, PokemonSetLike>).doubles) : undefined;
-    return set ? { species: r.species, set } : { species: r.species };
+    const entry = set ? { species: r.species, set } : { species: r.species };
+    return r.trial_until ? { ...entry, trialUntil: r.trial_until } : entry;
   });
   const team = d.prepare('SELECT format, set_json FROM team_members ORDER BY format, position').all() as { format: string; set_json: string }[];
   const hasTeams = (d.prepare("SELECT value FROM settings WHERE key = 'teams_saved'").get() as { value: string } | undefined);
@@ -133,8 +137,8 @@ export function write(key: string, value: Json) {
     switch (key) {
       case KEYS.box: {
         d.exec('DELETE FROM collection');
-        const ins = d.prepare('INSERT INTO collection (species, position, sets_json, updated_at) VALUES (?, ?, ?, datetime(\'now\'))');
-        (value as BoxEntryLike[]).forEach((b, i) => ins.run(b.species, i, JSON.stringify(b.set ?? b.sets?.singles ?? b.sets?.doubles ?? null)));
+        const ins = d.prepare('INSERT INTO collection (species, position, sets_json, trial_until, updated_at) VALUES (?, ?, ?, ?, datetime(\'now\'))');
+        (value as BoxEntryLike[]).forEach((b, i) => ins.run(b.species, i, JSON.stringify(b.set ?? b.sets?.singles ?? b.sets?.doubles ?? null), b.trialUntil ?? null));
         break;
       }
       case KEYS.teams: {

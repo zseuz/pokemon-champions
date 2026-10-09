@@ -5,6 +5,7 @@ import { blankCandidate, rankCandidates, type CandidateEval } from '../models/an
 import { getSpecies } from '../models/domain/dex';
 import { type PokemonSet } from '../models/domain/sets';
 import { load, save, setFor, upsertSet, type BoxEntry } from '../models/repository/store';
+import { recruitTrial, TRIAL_DAYS } from '../models/repository/trial';
 
 export const KEY = 'pkmn-champions-candidates';
 
@@ -14,6 +15,8 @@ export function useSelectionController({ format, team, setTeam, box, setBox }: {
   const [editing, setEditing] = useState<number | null>(null);
   const [open, setOpen] = useState<string | null>(null);
   const [recruited, setRecruited] = useState<string | null>(null);
+  /** el último reclutamiento fue de prueba */
+  const [wasTrial, setWasTrial] = useState(false);
 
   useEffect(() => save(KEY, cands), [cands]);
 
@@ -29,7 +32,19 @@ export function useSelectionController({ format, team, setTeam, box, setBox }: {
     setEditing(cands.length);
   };
 
+  /**
+   * Reclutar de prueba (7 días): entra en tu colección con su set y, si hay hueco, en tu equipo para probarlo.
+   * Pasada la semana la app avisa para que decidas si te lo quedas.
+   */
+  const recruitOnTrial = (c: CandidateEval) => {
+    setBox(recruitTrial(box, c.set));
+    if (!team.some((t) => t.species === c.set.species) && team.length < 6) setTeam([...team, structuredClone(c.set)]);
+    setWasTrial(true);
+    setRecruited(c.set.species);
+  };
+
   const recruit = (c: CandidateEval, toTeam: boolean) => {
+    setWasTrial(false);
     if (c.owned && !c.owned.better && !confirm(`Ya tienes un ${c.set.species} igual o mejor (calidad ${c.owned.quality}% frente a ${c.quality}%). ¿Reemplazar tu set por este?`)) return;
     // el ejemplar reclutado pasa a ser tu set de ese Pokémon (para los dos formatos)
     setBox(upsertSet(box, c.set));
@@ -44,5 +59,5 @@ export function useSelectionController({ format, team, setTeam, box, setBox }: {
 
   const indexOf = (s: PokemonSet) => cands.indexOf(s);
 
-  return { cands, setCands, showGrid, setShowGrid, editing, setEditing, open, setOpen, recruited, setRecruited, collection, ready, owned, ranked, add, recruit, indexOf };
+  return { TRIAL_DAYS, wasTrial, recruitOnTrial, cands, setCands, showGrid, setShowGrid, editing, setEditing, open, setOpen, recruited, setRecruited, collection, ready, owned, ranked, add, recruit, indexOf };
 }

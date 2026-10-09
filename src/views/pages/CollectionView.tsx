@@ -8,6 +8,7 @@ import { type BoxEntry } from '../../models/repository/store';
 import { Sprite, TypeBadge, Types, ItemIcon } from '../components/common';
 import { tierColor } from '../theme';
 import { SetEditor } from '../components/SetEditor';
+import { trialLabel } from '../../models/repository/trial';
 import { BackupPanel } from '../components/BackupPanel';
 import type { AppController } from '../../controllers/useAppController';
 import type { BattleRecord } from '../../models/analysis/history';
@@ -27,7 +28,7 @@ interface Props {
 
 
 export function Collection({ format, team, setTeam, box, setBox, inventory, onGoRecruit, backup, history }: Props) {
-  const { recruitSpecies, saveSet, removeFromCollection, editingSet, isCustomEntry, q, setQ, type, setType, sort, setSort, expanded, setExpanded, editing, setEditing, locked, setLocked, size, setSize, built, busy, adding, setAdding, sets, advice, fitOf, typeCount, megaCount, metaCount, list, inTeam, addToTeam, swap, build, applyBuilt } = useCollectionController({ format, team, setTeam, box, setBox, inventory });
+  const { trialList, trialOf, expiredTrials, keep, releaseTrial, recruitSpecies, saveSet, removeFromCollection, editingSet, isCustomEntry, q, setQ, type, setType, sort, setSort, expanded, setExpanded, editing, setEditing, locked, setLocked, size, setSize, built, busy, adding, setAdding, sets, advice, fitOf, typeCount, megaCount, metaCount, list, inTeam, addToTeam, swap, build, applyBuilt } = useCollectionController({ format, team, setTeam, box, setBox, inventory });
   if (box.length === 0) {
     return (
       <div>
@@ -56,6 +57,30 @@ export function Collection({ format, team, setTeam, box, setBox, inventory, onGo
           <button onClick={onGoRecruit}>🔍 Buscar más</button>
         </div>
       </div>
+
+      {trialList.length > 0 && (
+        <div className={`trial-panel${expiredTrials.length ? ' expired' : ''}`}>
+          <h3>{expiredTrials.length ? '⌛ Terminó la prueba de algunos Pokémon' : '🕒 Pokémon de prueba'}</h3>
+          <p className="muted small">
+            {expiredTrials.length
+              ? 'Si en el juego los reclutaste de forma definitiva pulsa «Quedármelo»; si no, quítalos de tu colección.'
+              : 'Los reclutaste de prueba (7 días). Cuando termine la prueba decide si te los quedas.'}
+          </p>
+          <div className="trial-list">
+            {trialList.map((t) => (
+              <div key={t.species} className={`trial-row${t.expired ? ' expired' : t.daysLeft <= 1 ? ' last' : ''}`}>
+                <Sprite species={t.species} size={40} />
+                <div>
+                  <b>{t.species}</b>
+                  <div className="small muted">{trialLabel(t)} · {t.expired ? 'terminó' : 'termina'} el {t.until.toLocaleDateString('es', { day: 'numeric', month: 'long' })}</div>
+                </div>
+                <button className="small-btn primary" onClick={() => keep(t.species)}>✔ Quedármelo</button>
+                {t.expired && <button className="small-btn danger" onClick={() => confirm(`¿Quitar a ${t.species} de tu colección?`) && releaseTrial(t.species)}>Quitar</button>}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <BackupPanel backup={backup} formatName={FORMAT_ES[format]} />
 
@@ -216,6 +241,7 @@ export function Collection({ format, team, setTeam, box, setBox, inventory, onGo
                   <div className="coll-info">
                     <b>{s.species}</b>{mega !== s.species && <span className="mega-tag">Mega</span>}
                     {isIn && <span className="team-tag">En equipo</span>}
+                    {trialOf(s.species) && <span className={`trial-tag${trialOf(s.species)!.expired ? ' expired' : ''}`}>🕒 {trialLabel(trialOf(s.species)!)}</span>}
                     <div><Types species={mega} /></div>
                     <div className="meta-tags">
                       {metaD && <span className="tier-chip" style={{ background: tierColor[metaD.tier] }} title="Dobles">👥 {metaD.tier} · {usageLabel(metaD)}</span>}

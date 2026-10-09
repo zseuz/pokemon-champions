@@ -25,7 +25,7 @@ interface Props {
  * su habilidad, movimientos, naturaleza y Stat Points. Aquí se registran tal cual y se ordenan.
  */
 export function Selection({ format, team, setTeam, box, setBox }: Props) {
-  const { cands, setCands, showGrid, setShowGrid, editing, setEditing, open, setOpen, recruited, setRecruited, ready, ranked, add, recruit, indexOf } = useSelectionController({ format, team, setTeam, box, setBox });
+  const { TRIAL_DAYS, wasTrial, recruitOnTrial, cands, setCands, showGrid, setShowGrid, editing, setEditing, open, setOpen, recruited, setRecruited, ready, ranked, add, recruit, indexOf } = useSelectionController({ format, team, setTeam, box, setBox });
   return (
     <div>
       <div className="panel compact">
@@ -60,7 +60,9 @@ export function Selection({ format, team, setTeam, box, setBox }: Props) {
 
       {recruited && (
         <div className="good-msg row wrap" style={{ marginBottom: 12 }}>
-          ✔ {recruited} reclutado y guardado en tu colección con su set.
+          {wasTrial
+            ? <>🕒 {recruited} reclutado <b>de prueba por {TRIAL_DAYS} días</b>: está en tu colección con su set. Te aviso en <b>Mi colección</b> cuando termine para que decidas si te lo quedas.</>
+            : <>✔ {recruited} reclutado y guardado en tu colección con su set.</>}
           <button className="small-btn" onClick={() => { setCands([]); setRecruited(null); }}>Empezar nueva selección</button>
         </div>
       )}
@@ -142,6 +144,11 @@ export function Selection({ format, team, setTeam, box, setBox }: Props) {
                       : team.length < 6 ? 'Reclutar y añadir al equipo' : c.replaces && c.teamFit > 0 ? `Reclutar y cambiar por ${c.replaces}` : 'Reclutar'}
                   </button>
                   {!c.owned && !team.some((t) => t.species === c.set.species) && (team.length < 6 || (c.replaces && c.teamFit > 0)) && <button onClick={() => recruit(c, false)}>Solo reclutar</button>}
+                  {!box.some((b) => b.species === c.set.species) && (
+                    <button className="trial-btn" onClick={() => recruitOnTrial(c)} title={`Lo pruebas ${TRIAL_DAYS} días antes de decidir si te lo quedas${team.length < 6 ? ' (se añade a tu equipo para probarlo)' : ''}`}>
+                      🕒 Reclutar de prueba ({TRIAL_DAYS} días)
+                    </button>
+                  )}
                   <button className="small-btn" onClick={() => setEditing(indexOf(c.set))}>Editar datos</button>
                   <button className="small-btn danger" onClick={() => setCands(cands.filter((x) => x !== c.set))}>Quitar</button>
                 </div>

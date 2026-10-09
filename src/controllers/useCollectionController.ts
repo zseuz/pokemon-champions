@@ -5,6 +5,7 @@ import { getSpecies } from '../models/domain/dex';
 import { assignItems } from '../models/analysis/items';
 import { effectiveSpecies, type PokemonSet } from '../models/domain/sets';
 import { addSpecies, isCustom, setFor, upsertSet, type BoxEntry } from '../models/repository/store';
+import { keepTrial, trials, type TrialStatus } from '../models/repository/trial';
 import { autoBuild, collectionAdvice, type BuiltTeam } from '../models/analysis/synergy';
 
 export type Sort = 'fit' | 'meta' | 'name' | 'bst';
@@ -77,9 +78,22 @@ export function useCollectionController({ format, team, setTeam, box, setBox, in
   /** Guarda tu set de un Pokémon (lo usan los equipos de los dos formatos). */
   const saveSet = (s: PokemonSet) => setBox(upsertSet(box, s));
   const removeFromCollection = (species: string) => setBox(box.filter((b) => b.species !== species));
+
+  // ── Reclutados de prueba (7 días) ──
+  const [now] = useState(() => Date.now());
+  const trialList = useMemo(() => trials(box, now), [box, now]);
+  const trialOf = (species: string): TrialStatus | undefined => trialList.find((t) => t.species === species);
+  const expiredTrials = trialList.filter((t) => t.expired);
+  /** «Quedármelo»: la prueba pasa a ser un reclutamiento definitivo */
+  const keep = (species: string) => setBox(keepTrial(box, species));
+  /** Termina la prueba sin quedárselo: sale de la colección y de los equipos */
+  const releaseTrial = (species: string) => {
+    if (inTeam(species)) setTeam(team.filter((t) => t.species !== species));
+    setBox(box.filter((b) => b.species !== species));
+  };
   const editingEntry = box.find((b) => b.species === editing);
   const editingSet = editingEntry ? setFor(editingEntry, format) : null;
   const isCustomEntry = (species: string) => isCustom(box.find((b) => b.species === species));
 
-  return { recruitSpecies, saveSet, removeFromCollection, editingSet, isCustomEntry, q, setQ, type, setType, sort, setSort, expanded, setExpanded, editing, setEditing, locked, setLocked, size, setSize, built, setBuilt, busy, setBusy, adding, setAdding, sets, advice, fitOf, typeCount, megaCount, metaCount, list, inTeam, addToTeam, swap, build, applyBuilt };
+  return { trialList, trialOf, expiredTrials, keep, releaseTrial, recruitSpecies, saveSet, removeFromCollection, editingSet, isCustomEntry, q, setQ, type, setType, sort, setSort, expanded, setExpanded, editing, setEditing, locked, setLocked, size, setSize, built, setBuilt, busy, setBusy, adding, setAdding, sets, advice, fitOf, typeCount, megaCount, metaCount, list, inTeam, addToTeam, swap, build, applyBuilt };
 }
